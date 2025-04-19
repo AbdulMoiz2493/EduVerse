@@ -19,7 +19,9 @@ const server = http.createServer(app);
 
 // Configure CORS for Express
 app.use(cors({
-  origin: ['http://localhost:8080', "https://web-dev-marathon-production.up.railway.app/"], // Update to match the frontend's origin
+  origin: ['http://localhost:8080',
+    'https://web-dev-marathon-production.up.railway.app',
+    'https://web-dev-marathon-three.vercel.app"], // Update to match the frontend's origin
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -28,7 +30,7 @@ app.use(cors({
 // Configure Socket.IO with CORS
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:8080', "https://web-dev-marathon-production.up.railway.app/"], // Update to match the frontend's origin
+    origin: ['http://localhost:8080', "https://web-dev-marathon-production.up.railway.app/", "https://web-dev-marathon-three.vercel.app"], // Update to match the frontend's origin
     credentials: true,
     methods: ['GET', 'POST'],
   },
