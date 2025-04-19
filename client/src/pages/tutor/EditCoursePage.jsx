@@ -46,7 +46,7 @@ export const EditCoursePage = () => {
         setDescription(res.data.description);
         setVideos(res.data.videos || []);
         if (res.data.thumbnail) {
-          setThumbnailPreview(`http://localhost:5000/${res.data.thumbnail}`);
+          setThumbnailPreview(`https://web-dev-marathon-production.up.railway.app/${res.data.thumbnail}`);
         }
       } catch (error) {
         console.error("Error fetching course:", error);

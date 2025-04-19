@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Set the base URL for all API calls
-const BASE_URL = 'http://localhost:5000'; // Change this to your backend URL
+const BASE_URL = 'https://web-dev-marathon-production.up.railway.app';
 
 export const api = axios.create({
   baseURL: BASE_URL,

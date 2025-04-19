@@ -274,7 +274,7 @@ export const TutorDashboard = () => {
                     <div className="md:w-64 h-48 md:h-auto bg-indigo-50 relative overflow-hidden">
                       {course.thumbnail ? (
                         <img 
-                          src={`http://localhost:5000/${course.thumbnail}`} 
+                          src={`https://web-dev-marathon-production.up.railway.app/${course.thumbnail}`} 
                           alt={course.title} 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />

@@ -400,7 +400,7 @@ export const StudentDashboard = () => {
                   <div className="h-40 bg-indigo-50 relative overflow-hidden">
                     {course.thumbnail ? (
                       <img 
-                        src={`http://localhost:5000/${course.thumbnail}`} 
+                        src={`https://web-dev-marathon-production.up.railway.app/${course.thumbnail}`} 
                         alt={course.title} 
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
@@ -517,7 +517,7 @@ export const StudentDashboard = () => {
                   <div className="h-40 bg-indigo-50 relative overflow-hidden">
                     {course.thumbnail ? (
                       <img 
-                        src={`http://localhost:5000/${course.thumbnail}`} 
+                        src={`https://web-dev-marathon-production.up.railway.app/${course.thumbnail}`} 
                         alt={course.title} 
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
@@ -567,7 +567,7 @@ export const StudentDashboard = () => {
                           <div className="w-8 h-8 rounded-full bg-gray-200 mr-2 flex items-center justify-center overflow-hidden">
                             {course.tutor?.profilePic ? (
                               <img 
-                                src={`http://localhost:5000/${course.tutor.profilePic}`} 
+                                src={`https://web-dev-marathon-production.up.railway.app/${course.tutor.profilePic}`} 
                                 alt={course.tutor.name} 
                                 className="w-full h-full object-cover"
                               />

@@ -68,7 +68,7 @@ export const CourseDetailsPage = () => {
   useEffect(() => {
     if (!course) return;
 
-    const newSocket = io("http://localhost:5000", { 
+    const newSocket = io("", { 
       withCredentials: true,
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -305,7 +305,7 @@ export const CourseDetailsPage = () => {
               >
                 <div className="aspect-w-16 aspect-h-9 bg-black">
                   <video 
-                    src={`http://localhost:5000/${selectedVideo.videoUrl}`}
+                    src={`https://web-dev-marathon-production.up.railway.app/${selectedVideo.videoUrl}`}
                     controls
                     className="w-full h-full object-cover"
                   />

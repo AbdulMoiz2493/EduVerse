@@ -21,7 +21,8 @@ export const LoginPage = () => {
 
     try {
       const user = await login(email, password);
-      navigate(`/${user.role}`);
+      console.log(user)
+      // navigate(`/${user.role}`);
       toast({
         title: "Welcome back!",
         description: "Successfully logged into your account.",
