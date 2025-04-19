@@ -21,7 +21,7 @@ const server = http.createServer(app);
 app.use(cors({
   origin: ['http://localhost:8080',
     'https://web-dev-marathon-production.up.railway.app',
-    'https://web-dev-marathon-three.vercel.app"], // Update to match the frontend's origin
+    'https://web-dev-marathon-three.vercel.app'], // Update to match the frontend's origin
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
