@@ -1206,7 +1206,7 @@ function WelcomePage() {
             className="flex flex-col items-center cursor-pointer" 
             onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
           >
-            <span className="text-sm text-gray-600 mb-2 font-medium tracking-wide">Scroll to Explore</span>
+            <span className="text-sm text-gray-600 mb-2 font-medium tracking-wide pt-3">Scroll to Explore</span>
             <div className="w-6 h-10 border-2 border-gray-400 rounded-full flex justify-center pt-2">
               <div className="w-1.5 h-3 bg-gray-400 rounded-full animate-bounce"></div>
             </div>
@@ -1224,7 +1224,7 @@ function WelcomePage() {
             className="text-center mb-16"
           >
             <Badge className="mb-4 bg-indigo-100 text-indigo-600 py-1 px-5 shadow-md rounded-full">IMMERSIVE LEARNING</Badge>
-            <h2 className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Experience Education Reimagined</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent pb-1">Experience Education Reimagined</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               EduVerse brings learning to life with interactive experiences and cutting-edge technology
             </p>
@@ -1284,7 +1284,7 @@ function WelcomePage() {
             className="text-center mb-16"
           >
             <Badge className="mb-4 bg-indigo-100 text-indigo-600 py-1 px-5 shadow-md rounded-full">WHY CHOOSE EDUVERSE</Badge>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Transform Your Learning Experience</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent pb-1">Transform Your Learning Experience</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Our platform combines cutting-edge technology with expert instruction to create a truly personalized educational journey.
             </p>
@@ -1358,7 +1358,7 @@ function WelcomePage() {
             <Badge className="mb-4 bg-indigo-100 text-indigo-600 py-1 px-5 shadow-md rounded-full">
               TESTIMONIALS
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent pb-1">
               What Our Learners Say
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">

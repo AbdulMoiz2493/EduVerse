@@ -14,6 +14,9 @@ import { CreateCoursePage } from "./pages/tutor/CreateCoursePage";
 import { EditCoursePage } from "./pages/tutor/EditCoursePage";
 import { CourseEnrollmentsPage } from "./pages/tutor/CourseEnrollmentsPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import AboutPage from "./pages/AboutPage";
+import CoursesPage from "./pages/CoursesPage";
+import ContactPage from "./pages/ContactPage";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +27,11 @@ const App = () => {
         <Toaster />
         <Routes>
           <Route path="/" element={<WelcomePage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          
+          {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           
