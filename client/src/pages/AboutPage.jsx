@@ -12,6 +12,7 @@ import {
   Users,
   Brain,
   Target,
+  LayoutDashboard,
 } from "lucide-react";
 import Aurora from "./Aurora/Aurora";
 import SpotlightCard from "./SpotlightCard/SpotlightCard";

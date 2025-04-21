@@ -12,6 +12,7 @@ import {
   Code,
   Database,
   Palette,
+  LayoutDashboard,
 } from "lucide-react";
 import Aurora from "./Aurora/Aurora";
 import SpotlightCard from "./SpotlightCard/SpotlightCard";
