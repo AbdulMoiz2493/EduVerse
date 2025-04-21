@@ -40,14 +40,17 @@ export const StudentDashboard = () => {
       try {
         // Fetch enrollments
         const enrollmentsRes = await enrollmentApi.getStudentEnrollments();
-        const enrolledCoursesData = enrollmentsRes.data.map(enrollment => enrollment.course);
+        // Filter out enrollments where course is null or undefined
+        const enrolledCoursesData = enrollmentsRes.data
+          .map(enrollment => enrollment.course)
+          .filter(course => course != null); // Ensure course is not null/undefined
         setEnrolledCourses(enrolledCoursesData);
 
         // Fetch all courses
         const allCoursesRes = await courseApi.getAllCourses();
         const enrolledCourseIds = enrolledCoursesData.map(course => course._id);
         const availableCoursesData = allCoursesRes.data.filter(
-          course => !enrolledCourseIds.includes(course._id)
+          course => course != null && !enrolledCourseIds.includes(course._id) // Ensure course is not null
         );
         setAvailableCourses(availableCoursesData);
 
@@ -79,13 +82,15 @@ export const StudentDashboard = () => {
       await enrollmentApi.enrollCourse(courseId);
       
       const course = availableCourses.find(c => c._id === courseId);
-      setEnrolledCourses([...enrolledCourses, course]);
-      setAvailableCourses(availableCourses.filter(c => c._id !== courseId));
-      
-      toast({
-        title: "Enrolled!",
-        description: "You have successfully enrolled in this course",
-      });
+      if (course) { // Ensure course exists before updating state
+        setEnrolledCourses([...enrolledCourses, course]);
+        setAvailableCourses(availableCourses.filter(c => c._id !== courseId));
+        
+        toast({
+          title: "Enrolled!",
+          description: "You have successfully enrolled in this course",
+        });
+      }
     } catch (error) {
       console.error("Enrollment error:", error);
       toast({
@@ -144,8 +149,9 @@ export const StudentDashboard = () => {
 
   // Filter courses based on search term
   const filteredAvailableCourses = availableCourses.filter(course => 
-    course.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    course.description.toLowerCase().includes(searchTerm.toLowerCase())
+    course && // Ensure course is not null/undefined
+    (course.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    course.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Display loading state
@@ -393,73 +399,75 @@ export const StudentDashboard = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {enrolledCourses.map((course) => (
-                <div 
-                  key={course._id} 
-                  className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col border border-gray-100 hover:shadow-lg transition-all group"
-                >
-                  <div className="h-40 bg-indigo-50 relative overflow-hidden">
-                    {course.thumbnail ? (
-                      <img 
-                        src={`https://web-dev-marathon-production.up.railway.app/${course.thumbnail}`} 
-                        alt={course.title} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100">
-                        <Book className="w-12 h-12 text-indigo-400" />
+                course && ( // Ensure course exists
+                  <div 
+                    key={course._id} 
+                    className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col border border-gray-100 hover:shadow-lg transition-all group"
+                  >
+                    <div className="h-40 bg-indigo-50 relative overflow-hidden">
+                      {course.thumbnail ? (
+                        <img 
+                          src={`https://web-dev-marathon-production.up.railway.app/${course.thumbnail}`} 
+                          alt={course.title} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100">
+                          <Book className="w-12 h-12 text-indigo-400" />
+                        </div>
+                      )}
+                      <div className="absolute top-2 right-2">
+                        <Badge className="bg-indigo-500/80 backdrop-blur-sm text-white">{course.category || "Course"}</Badge>
                       </div>
-                    )}
-                    <div className="absolute top-2 right-2">
-                      <Badge className="bg-indigo-500/80 backdrop-blur-sm text-white">{course.category || "Course"}</Badge>
                     </div>
-                  </div>
-                  <div className="p-5 flex-1 flex flex-col">
-                    <h3 className="font-semibold text-lg text-gray-900 mb-2 group-hover:text-indigo-700 transition-colors">
-                      {course.title}
-                    </h3>
-                    <div className="mb-2 flex items-center">
-                      <div className="flex space-x-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <svg key={star} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3 .921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784 .57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118l-2.8-2.034c-.783-.57-.38-1.81 .588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z"></path>
-                          </svg>
-                        ))}
-                      </div>
-                      <span className="text-sm text-gray-500 ml-2">
-                        {(Math.random() * 1 + 4).toFixed(1)} ({Math.floor(Math.random() * 100 + 50)})
-                      </span>
-                    </div>
-                    <p className="text-gray-600 text-sm mb-4 flex-1">
-                      {course.description.length > 100
-                        ? `${course.description.substring(0, 100)}...`
-                        : course.description}
-                    </p>
-                    <div className="mt-auto">
-                      <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
-                        <span className="flex items-center">
-                          <Users className="w-4 h-4 mr-1" />
-                          {Math.floor(Math.random() * 1000 + 100)} students
-                        </span>
-                        <span className="flex items-center">
-                          <BookOpen className="w-4 h-4 mr-1" />
-                          {course.videos?.length || Math.floor(Math.random() * 20 + 5)} videos
+                    <div className="p-5 flex-1 flex flex-col">
+                      <h3 className="font-semibold text-lg text-gray-900 mb-2 group-hover:text-indigo-700 transition-colors">
+                        {course.title}
+                      </h3>
+                      <div className="mb-2 flex items-center">
+                        <div className="flex space-x-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <svg key={star} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3 .921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784 .57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118l-2.8-2.034c-.783-.57-.38-1.81 .588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z"></path>
+                            </svg>
+                          ))}
+                        </div>
+                        <span className="text-sm text-gray-500 ml-2">
+                          {(Math.random() * 1 + 4).toFixed(1)} ({Math.floor(Math.random() * 100 + 50)})
                         </span>
                       </div>
-                      <div className="bg-gray-100 h-2 rounded-full mb-4">
-                        <div 
-                          className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full" 
-                          style={{ width: `${Math.floor(Math.random() * 80 + 10)}%` }}
-                        ></div>
+                      <p className="text-gray-600 text-sm mb-4 flex-1">
+                        {course.description?.length > 100
+                          ? `${course.description.substring(0, 100)}...`
+                          : course.description || "No description available"}
+                      </p>
+                      <div className="mt-auto">
+                        <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
+                          <span className="flex items-center">
+                            <Users className="w-4 h-4 mr-1" />
+                            {Math.floor(Math.random() * 1000 + 100)} students
+                          </span>
+                          <span className="flex items-center">
+                            <BookOpen className="w-4 h-4 mr-1" />
+                            {course.videos?.length || Math.floor(Math.random() * 20 + 5)} videos
+                          </span>
+                        </div>
+                        <div className="bg-gray-100 h-2 rounded-full mb-4">
+                          <div 
+                            className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full" 
+                            style={{ width: `${Math.floor(Math.random() * 80 + 10)}%` }}
+                          ></div>
+                        </div>
+                        <Link to={`/course/${course._id}`}>
+                          <Button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white group">
+                            Continue Learning
+                            <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                          </Button>
+                        </Link>
                       </div>
-                      <Link to={`/course/${course._id}`}>
-                        <Button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white group">
-                          Continue Learning
-                          <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                        </Button>
-                      </Link>
                     </div>
                   </div>
-                </div>
+                )
               ))}
             </div>
           )}
@@ -473,7 +481,7 @@ export const StudentDashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.6 }}
         >
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md: items-center mb-8">
             <div className="flex items-center mb-4 md:mb-0">
               <Book className="mr-2 text-indigo-600" /> 
               <h2 className="text-2xl font-bold text-gray-900">Discover New Courses</h2>
@@ -510,85 +518,87 @@ export const StudentDashboard = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredAvailableCourses.map((course) => (
-                <div 
-                  key={course._id} 
-                  className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col border border-gray-100 hover:shadow-lg transition-all group"
-                >
-                  <div className="h-40 bg-indigo-50 relative overflow-hidden">
-                    {course.thumbnail ? (
-                      <img 
-                        src={`https://web-dev-marathon-production.up.railway.app/${course.thumbnail}`} 
-                        alt={course.title} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100">
-                        <Book className="w-12 h-12 text-indigo-400" />
+                course && ( // Ensure course exists
+                  <div 
+                    key={course._id} 
+                    className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col border border-gray-100 hover:shadow-lg transition-all group"
+                  >
+                    <div className="h-40 bg-indigo-50 relative overflow-hidden">
+                      {course.thumbnail ? (
+                        <img 
+                          src={`https://web-dev-marathon-production.up.railway.app/${course.thumbnail}`} 
+                          alt={course.title} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100">
+                          <Book className="w-12 h-12 text-indigo-400" />
+                        </div>
+                      )}
+                      <div className="absolute top-2 right-2">
+                        <Badge className="bg-purple-500/80 backdrop-blur-sm text-white">{course.category || "New"}</Badge>
                       </div>
-                    )}
-                    <div className="absolute top-2 right-2">
-                      <Badge className="bg-purple-500/80 backdrop-blur-sm text-white">{course.category || "New"}</Badge>
                     </div>
-                  </div>
-                  <div className="p-5 flex-1 flex flex-col">
-                    <h3 className="font-semibold text-lg text-gray-900 mb-2 group-hover:text-indigo-700 transition-colors">
-                      {course.title}
-                    </h3>
-                    <div className="mb-2 flex items-center">
-                      <div className="flex space-x-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <svg key={star} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3 .921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784 .57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118l-2.8-2.034c-.783-.57-.38-1.81 .588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z"></path>
-                          </svg>
-                        ))}
-                      </div>
-                      <span className="text-sm text-gray-500 ml-2">
-                        {(Math.random() * 1 + 4).toFixed(1)} ({Math.floor(Math.random() * 100 + 50)})
-                      </span>
-                    </div>
-                    <p className="text-gray-600 text-sm mb-4 flex-1">
-                      {course.description.length > 100
-                        ? `${course.description.substring(0, 100)}...`
-                        : course.description}
-                    </p>
-                    <div className="mt-auto">
-                      <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
-                        <span className="flex items-center">
-                          <Users className="w-4 h-4 mr-1" />
-                          {Math.floor(Math.random() * 1000 + 100)} students
-                        </span>
-                        <span className="flex items-center">
-                          <BookOpen className="w-4 h-4 mr-1" />
-                          {course.videos?.length || Math.floor(Math.random() * 20 + 5)} videos
+                    <div className="p-5 flex-1 flex flex-col">
+                      <h3 className="font-semibold text-lg text-gray-900 mb-2 group-hover:text-indigo-700 transition-colors">
+                        {course.title}
+                      </h3>
+                      <div className="mb-2 flex items-center">
+                        <div className="flex space-x-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <svg key={star} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3 .921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784 .57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118l-2.8-2.034c-.783-.57-.38-1.81 .588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z"></path>
+                            </svg>
+                          ))}
+                        </div>
+                        <span className="text-sm text-gray-500 ml-2">
+                          {(Math.random() * 1 + 4).toFixed(1)} ({Math.floor(Math.random() * 100 + 50)})
                         </span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="w-8 h-8 rounded-full bg-gray-200 mr-2 flex items-center justify-center overflow-hidden">
-                            {course.tutor?.profilePic ? (
-                              <img 
-                                src={`https://web-dev-marathon-production.up.railway.app/${course.tutor.profilePic}`} 
-                                alt={course.tutor.name} 
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="font-medium text-xs">{course.tutor?.name?.charAt(0)}</span>
-                            )}
-                          </div>
-                          <span className="text-sm text-gray-700 font-medium">
-                            {course.tutor?.name}
+                      <p className="text-gray-600 text-sm mb-4 flex-1">
+                        {course.description?.length > 100
+                          ? `${course.description.substring(0, 100)}...`
+                          : course.description || "No description available"}
+                      </p>
+                      <div className="mt-auto">
+                        <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
+                          <span className="flex items-center">
+                            <Users className="w-4 h-4 mr-1" />
+                            {Math.floor(Math.random() * 1000 + 100)} students
+                          </span>
+                          <span className="flex items-center">
+                            <BookOpen className="w-4 h-4 mr-1" />
+                            {course.videos?.length || Math.floor(Math.random() * 20 + 5)} videos
                           </span>
                         </div>
-                        <Button 
-                          onClick={() => handleEnroll(course._id)}
-                          className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white group"
-                        >
-                          Enroll Now
-                        </Button>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 rounded-full bg-gray-200 mr-2 flex items-center justify-center overflow-hidden">
+                              {course.tutor?.profilePic ? (
+                                <img 
+                                  src={`https://web-dev-marathon-production.up.railway.app/${course.tutor.profilePic}`} 
+                                  alt={course.tutor.name || "Tutor"} 
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="font-medium text-xs">{course.tutor?.name?.charAt(0) || "T"}</span>
+                              )}
+                            </div>
+                            <span className="text-sm text-gray-700 font-medium">
+                              {course.tutor?.name || "Unknown Tutor"}
+                            </span>
+                          </div>
+                          <Button 
+                            onClick={() => handleEnroll(course._id)}
+                            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white group"
+                          >
+                            Enroll Now
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                )
               ))}
             </div>
           )}
@@ -642,3 +652,6 @@ export const StudentDashboard = () => {
     </div>
   );
 };
+
+
+
