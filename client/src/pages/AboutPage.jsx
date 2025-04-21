@@ -48,6 +48,7 @@ function AboutPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userRole, setUserRole] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -82,11 +83,15 @@ function AboutPage() {
     try {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      setIsLoggedIn(false);
+      setUserRole(null);
       navigate("/login");
     } catch (error) {
       console.error("Logout failed:", error);
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      setIsLoggedIn(false);
+      setUserRole(null);
       navigate("/login");
     }
   };
