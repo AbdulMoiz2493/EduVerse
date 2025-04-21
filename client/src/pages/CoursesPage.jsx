@@ -104,6 +104,15 @@ function CoursesPage() {
       path: "/contact",
       icon: <Contact className="w-3 h-3" />,
     },
+    ...(isLoggedIn
+      ? [
+          {
+            name: "Dashboard",
+            path: userRole === "tutor" ? "/tutor" : "/student",
+            icon: <LayoutDashboard className="w-4 h-4" />,
+          },
+        ]
+      : []),
   ];
 
   return (

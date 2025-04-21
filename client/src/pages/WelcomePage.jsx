@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSprings, animated } from '@react-spring/web';
-import { 
-  GraduationCap, 
-  BookOpen, 
-  Users, 
+import { useSprings, animated } from "@react-spring/web";
+import {
+  GraduationCap,
+  BookOpen,
+  Users,
   Brain,
   Target,
   Clock,
@@ -19,7 +19,7 @@ import {
   Contact,
   Menu,
   X,
-  LayoutDashboard
+  LayoutDashboard,
 } from "lucide-react";
 import {
   Renderer,
@@ -28,7 +28,7 @@ import {
   Triangle,
   Vec3,
   Camera,
-  Transform
+  Transform,
 } from "ogl";
 import SpotlightCard from "./SpotlightCard/SpotlightCard";
 import Aurora from "./Aurora/Aurora";
@@ -290,7 +290,8 @@ function Orb({
       program.uniforms.hoverIntensity.value = hoverIntensity;
 
       const effectiveHover = forceHoverState ? 1 : targetHover;
-      program.uniforms.hover.value += (effectiveHover - program.uniforms.hover.value) * 0.1;
+      program.uniforms.hover.value +=
+        (effectiveHover - program.uniforms.hover.value) * 0.1;
 
       if (rotateOnHover && effectiveHover > 0.5) {
         currentRot += dt * rotationSpeed;
@@ -316,35 +317,44 @@ function Orb({
 
 // BlurText Component
 const BlurText = ({
-  text = '',
+  text = "",
   delay = 200,
-  className = '',
-  animateBy = 'words',
-  direction = 'top',
+  className = "",
+  animateBy = "words",
+  direction = "top",
   threshold = 0.1,
-  rootMargin = '0px',
+  rootMargin = "0px",
   animationFrom,
   animationTo,
-  easing = 'easeOutCubic',
+  easing = "easeOutCubic",
   onAnimationComplete,
 }) => {
-  const elements = animateBy === 'words' ? text.split(' ') : text.split('');
+  const elements = animateBy === "words" ? text.split(" ") : text.split("");
   const [inView, setInView] = useState(false);
   const ref = useRef();
   const animatedCount = useRef(0);
 
   const defaultFrom =
-    direction === 'top'
-      ? { filter: 'blur(10px)', opacity: 0, transform: 'translate3d(0,-50px,0)' }
-      : { filter: 'blur(10px)', opacity: 0, transform: 'translate3d(0,50px,0)' };
+    direction === "top"
+      ? {
+          filter: "blur(10px)",
+          opacity: 0,
+          transform: "translate3d(0,-50px,0)",
+        }
+      : {
+          filter: "blur(10px)",
+          opacity: 0,
+          transform: "translate3d(0,50px,0)",
+        };
 
   const defaultTo = [
     {
-      filter: 'blur(5px)',
+      filter: "blur(5px)",
       opacity: 0.5,
-      transform: direction === 'top' ? 'translate3d(0,5px,0)' : 'translate3d(0,-5px,0)',
+      transform:
+        direction === "top" ? "translate3d(0,5px,0)" : "translate3d(0,-5px,0)",
     },
-    { filter: 'blur(0px)', opacity: 1, transform: 'translate3d(0,0,0)' },
+    { filter: "blur(0px)", opacity: 1, transform: "translate3d(0,0,0)" },
   ];
 
   useEffect(() => {
@@ -369,14 +379,17 @@ const BlurText = ({
       from: animationFrom || defaultFrom,
       to: inView
         ? async (next) => {
-          for (const step of (animationTo || defaultTo)) {
-            await next(step);
+            for (const step of animationTo || defaultTo) {
+              await next(step);
+            }
+            animatedCount.current += 1;
+            if (
+              animatedCount.current === elements.length &&
+              onAnimationComplete
+            ) {
+              onAnimationComplete();
+            }
           }
-          animatedCount.current += 1;
-          if (animatedCount.current === elements.length && onAnimationComplete) {
-            onAnimationComplete();
-          }
-        }
         : animationFrom || defaultFrom,
       delay: i * delay,
       config: { easing },
@@ -390,12 +403,12 @@ const BlurText = ({
           key={index}
           style={{
             ...props,
-            display: 'inline-block',
-            willChange: 'transform, filter, opacity',
+            display: "inline-block",
+            willChange: "transform, filter, opacity",
           }}
         >
-          {elements[index] === ' ' ? '\u00A0' : elements[index]}
-          {animateBy === 'words' && index < elements.length - 1 && '\u00A0'}
+          {elements[index] === " " ? "\u00A0" : elements[index]}
+          {animateBy === "words" && index < elements.length - 1 && "\u00A0"}
         </animated.span>
       ))}
     </p>
@@ -416,9 +429,10 @@ function fract(x) {
 }
 
 function hash31(p) {
-  let r = [p * 0.1031, p * 0.1030, p * 0.0973].map(fract);
+  let r = [p * 0.1031, p * 0.103, p * 0.0973].map(fract);
   const r_yzx = [r[1], r[2], r[0]];
-  const dotVal = r[0] * (r_yzx[0] + 33.33) +
+  const dotVal =
+    r[0] * (r_yzx[0] + 33.33) +
     r[1] * (r_yzx[1] + 33.33) +
     r[2] * (r_yzx[2] + 33.33);
   for (let i = 0; i < 3; i++) {
@@ -428,9 +442,10 @@ function hash31(p) {
 }
 
 function hash33(v) {
-  let p = [v[0] * 0.1031, v[1] * 0.1030, v[2] * 0.0973].map(fract);
+  let p = [v[0] * 0.1031, v[1] * 0.103, v[2] * 0.0973].map(fract);
   const p_yxz = [p[1], p[0], p[2]];
-  const dotVal = p[0] * (p_yxz[0] + 33.33) +
+  const dotVal =
+    p[0] * (p_yxz[0] + 33.33) +
     p[1] * (p_yxz[1] + 33.33) +
     p[2] * (p_yxz[2] + 33.33);
   for (let i = 0; i < 3; i++) {
@@ -518,13 +533,22 @@ const MetaBalls = ({
     if (!container) return;
 
     const dpr = 1;
-    const renderer = new Renderer({ dpr, alpha: true, premultipliedAlpha: false });
+    const renderer = new Renderer({
+      dpr,
+      alpha: true,
+      premultipliedAlpha: false,
+    });
     const gl = renderer.gl;
     gl.clearColor(0, 0, 0, enableTransparency ? 0 : 1);
     container.appendChild(gl.canvas);
 
     const camera = new Camera(gl, {
-      left: -1, right: 1, top: 1, bottom: -1, near: 0.1, far: 10,
+      left: -1,
+      right: 1,
+      top: 1,
+      bottom: -1,
+      near: 0.1,
+      far: 10,
     });
     camera.position.z = 1;
 
@@ -586,7 +610,11 @@ const MetaBalls = ({
       renderer.setSize(width * dpr, height * dpr);
       gl.canvas.style.width = width + "px";
       gl.canvas.style.height = height + "px";
-      program.uniforms.iResolution.value.set(gl.canvas.width, gl.canvas.height, 0);
+      program.uniforms.iResolution.value.set(
+        gl.canvas.width,
+        gl.canvas.height,
+        0
+      );
     }
     window.addEventListener("resize", resize);
     resize();
@@ -671,32 +699,41 @@ const MetaBalls = ({
     enableTransparency,
   ]);
 
-  return <div ref={containerRef} className="metaballs-container" style={{ position: 'relative', width: '100%', height: '100%' }} />;
+  return (
+    <div
+      ref={containerRef}
+      className="metaballs-container"
+      style={{ position: "relative", width: "100%", height: "100%" }}
+    />
+  );
 };
 
 // Slides data
 const slides = [
   {
     title: "Experience Personalized Learning",
-    subtitle: "Connect with expert tutors who will guide your unique educational journey.",
+    subtitle:
+      "Connect with expert tutors who will guide your unique educational journey.",
     icon: <GraduationCap className="w-16 h-16 text-indigo-600" />,
     bgGradient: "from-indigo-100 via-purple-50 to-blue-100",
-    badge: "Smart Tutoring"
+    badge: "Smart Tutoring",
   },
   {
     title: "Learn Without Limits",
-    subtitle: "Access course videos with AI-powered transcripts, summaries, and personalized recommendations.",
+    subtitle:
+      "Access course videos with AI-powered transcripts, summaries, and personalized recommendations.",
     icon: <Brain className="w-16 h-16 text-blue-600" />,
     bgGradient: "from-blue-100 via-indigo-50 to-purple-100",
-    badge: "AI-Enhanced Learning"
+    badge: "AI-Enhanced Learning",
   },
   {
     title: "Join a Thriving Community",
-    subtitle: "Engage with tutors and fellow learners through interactive sessions and real-time discussions.",
+    subtitle:
+      "Engage with tutors and fellow learners through interactive sessions and real-time discussions.",
     icon: <Users className="w-16 h-16 text-purple-600" />,
     bgGradient: "from-purple-100 via-indigo-50 to-blue-100",
     badge: "Community-Driven",
-    final: true
+    final: true,
   },
 ];
 
@@ -705,47 +742,55 @@ const features = [
   {
     icon: <Target className="w-6 h-6 text-indigo-600" />,
     title: "Personalized Learning",
-    description: "AI algorithms create custom learning journeys based on your goals and progress."
+    description:
+      "AI algorithms create custom learning journeys based on your goals and progress.",
   },
   {
     icon: <Clock className="w-6 h-6 text-indigo-600" />,
     title: "Flexible Scheduling",
-    description: "Book sessions with tutors that fit your calendar and learning preferences."
+    description:
+      "Book sessions with tutors that fit your calendar and learning preferences.",
   },
   {
     icon: <RefreshCw className="w-6 h-6 text-indigo-600" />,
     title: "Continuous Improvement",
-    description: "Analytics and feedback help optimize your learning experience over time."
+    description:
+      "Analytics and feedback help optimize your learning experience over time.",
   },
   {
     icon: <BookOpen className="w-6 h-6 text-indigo-600" />,
     title: "Comprehensive Library",
-    description: "Access thousands of courses, tutorials, and resources across disciplines."
-  }
+    description:
+      "Access thousands of courses, tutorials, and resources across disciplines.",
+  },
 ];
 
 // Testimonial data
 const testimonials = [
   {
-    quote: "EduVerse made learning so engaging! The AI recommendations helped me find courses I never knew I needed.",
+    quote:
+      "EduVerse made learning so engaging! The AI recommendations helped me find courses I never knew I needed.",
     author: "Sarah K.",
     role: "College Student",
     rating: 5,
   },
   {
-    quote: "The virtual classrooms are incredible. I feel like I'm in a real class, but with the flexibility I need.",
+    quote:
+      "The virtual classrooms are incredible. I feel like I'm in a real class, but with the flexibility I need.",
     author: "Michael P.",
     role: "Professional Learner",
     rating: 4,
   },
   {
-    quote: "I love the community here. The tutors are amazing, and I’ve made so many friends through discussions!",
+    quote:
+      "I love the community here. The tutors are amazing, and I’ve made so many friends through discussions!",
     author: "Emily R.",
     role: "High School Student",
     rating: 5,
   },
   {
-    quote: "The personalized learning paths are a game-changer. I’m progressing faster than I ever thought possible.",
+    quote:
+      "The personalized learning paths are a game-changer. I’m progressing faster than I ever thought possible.",
     author: "James L.",
     role: "Lifelong Learner",
     rating: 4,
@@ -755,7 +800,7 @@ const testimonials = [
 // Reusable Components
 const Badge = ({ children, className, ...props }) => {
   return (
-    <motion.span 
+    <motion.span
       className={`inline-flex items-center rounded-full px-4 py-1 text-sm font-medium ${className}`}
       whileHover={{ scale: 1.1, rotate: 3 }}
       whileTap={{ scale: 0.95 }}
@@ -768,7 +813,7 @@ const Badge = ({ children, className, ...props }) => {
 
 const Button = ({ children, className, ...props }) => {
   return (
-    <motion.button 
+    <motion.button
       className={`inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 ${className}`}
       whileHover={{ scale: 1.05, boxShadow: "0 10px 20px rgba(0,0,0,0.2)" }}
       whileTap={{ scale: 0.95 }}
@@ -791,15 +836,15 @@ function WelcomePage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const token = localStorage?.getItem('token');
-      const user = localStorage?.getItem('user');
+      const token = localStorage?.getItem("token");
+      const user = localStorage?.getItem("user");
       setIsLoggedIn(!!token);
       if (user) {
         try {
           const parsedUser = JSON.parse(user);
           setUserRole(parsedUser.role); // Assuming user object has a 'role' field ('student' or 'tutor')
         } catch (error) {
-          console.error('Error parsing user data:', error);
+          console.error("Error parsing user data:", error);
         }
       }
     }
@@ -811,8 +856,8 @@ function WelcomePage() {
       setIsScrolled(scrollPosition > 50);
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
@@ -844,40 +889,52 @@ function WelcomePage() {
 
   const handleLogout = async () => {
     try {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
       setIsLoggedIn(false);
       setUserRole(null);
-      navigate('/login');
+      navigate("/login");
     } catch (error) {
-      console.error('Logout failed:', error);
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      console.error("Logout failed:", error);
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
       setIsLoggedIn(false);
       setUserRole(null);
-      navigate('/login');
+      navigate("/login");
     }
   };
 
   const handleDashboardNavigation = () => {
-    const destination = userRole === 'tutor' ? '/tutor' : '/student';
+    const destination = userRole === "tutor" ? "/tutor" : "/student";
     navigate(destination);
   };
 
   const handleAnimationComplete = () => {
-    console.log('Animation completed!');
+    console.log("Animation completed!");
   };
 
   const navItems = [
     { name: "Home", path: "/", icon: <Home className="w-4 h-4" /> },
     { name: "About", path: "/about", icon: <Info className="w-4 h-4" /> },
-    { name: "Courses", path: "/courses", icon: <BookOpen className="w-4 h-4" /> },
-    { name: "Contact", path: "/contact", icon: <Contact className="w-4 h-4" /> },
-    ...(isLoggedIn ? [{
-      name: "Dashboard",
-      path: userRole === 'tutor' ? '/tutor' : '/student',
-      icon: <LayoutDashboard className="w-4 h-4" />
-    }] : []),
+    {
+      name: "Courses",
+      path: "/courses",
+      icon: <BookOpen className="w-4 h-4" />,
+    },
+    {
+      name: "Contact",
+      path: "/contact",
+      icon: <Contact className="w-4 h-4" />,
+    },
+    ...(isLoggedIn
+      ? [
+          {
+            name: "Dashboard",
+            path: userRole === "tutor" ? "/tutor" : "/student",
+            icon: <LayoutDashboard className="w-4 h-4" />,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -937,28 +994,34 @@ function WelcomePage() {
           }
         `}
       </style>
-      <div className={`relative min-h-screen transition-all duration-700 bg-gradient-to-br ${slide.bgGradient}`}>
-        
-
+      <div
+        className={`relative min-h-screen transition-all duration-700 bg-gradient-to-br ${slide.bgGradient}`}
+      >
         {/* Navbar */}
         <div className="fixed top-4 left-0 right-0 flex justify-center z-50 px-6">
-          <motion.div 
+          <motion.div
             initial={{ y: -100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 1, ease: "easeOut" }}
             className={`rounded-full py-1 px-3 transition-all duration-300 
-              ${isScrolled ? 'bg-white/40 backdrop-blur-xl shadow-xl [backdrop-filter:blur(12px)] [-webkit-backdrop-filter:blur(12px)]' : 'bg-white/30 backdrop-blur-xl shadow-xl [backdrop-filter:blur(12px)] [-webkit-backdrop-filter:blur(12px)]'}
+              ${
+                isScrolled
+                  ? "bg-white/40 backdrop-blur-xl shadow-xl [backdrop-filter:blur(12px)] [-webkit-backdrop-filter:blur(12px)]"
+                  : "bg-white/30 backdrop-blur-xl shadow-xl [backdrop-filter:blur(12px)] [-webkit-backdrop-filter:blur(12px)]"
+              }
               flex items-center justify-between w-full max-w-4xl border border-white/20 h-11 relative`}
           >
             {/* Logo on the Left */}
             <div className="flex items-center gap-1.5">
-              <motion.div 
+              <motion.div
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 className="bg-gradient-to-r from-indigo-600 to-purple-500 w-7 h-7 rounded-full flex items-center justify-center text-white shadow-lg"
               >
                 <span className="font-bold text-base">E</span>
               </motion.div>
-              <span className="font-bold text-base bg-gradient-to-r from-indigo-700 to-purple-600 bg-clip-text text-transparent">EduVerse</span>
+              <span className="font-bold text-base bg-gradient-to-r from-indigo-700 to-purple-600 bg-clip-text text-transparent">
+                EduVerse
+              </span>
             </div>
 
             {/* Centered Navigation Items */}
@@ -1002,7 +1065,7 @@ function WelcomePage() {
                     whileTap={{ scale: 0.95 }}
                   >
                     <Button
-                      onClick={() => navigate('/login')}
+                      onClick={() => navigate("/login")}
                       className="hover:bg-indigo-50 hover:text-indigo-600 font-medium text-gray-600 py-1 px-2.5 rounded-full transition-all text-xs"
                     >
                       Log In
@@ -1012,8 +1075,8 @@ function WelcomePage() {
                     whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <Button 
-                      onClick={() => navigate('/signup')}
+                    <Button
+                      onClick={() => navigate("/signup")}
                       className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg transition-all text-white py-1 px-2.5 rounded-full text-xs"
                     >
                       Sign Up
@@ -1029,7 +1092,11 @@ function WelcomePage() {
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="relative z-50 bg-transparent text-gray-600 hover:text-indigo-600"
               >
-                {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                {menuOpen ? (
+                  <X className="w-6 h-6" />
+                ) : (
+                  <Menu className="w-6 h-6" />
+                )}
               </Button>
             </div>
           </motion.div>
@@ -1037,7 +1104,7 @@ function WelcomePage() {
 
         {/* Mobile Navigation Overlay */}
         <div
-          className={`mobile-nav-overlay ${menuOpen ? 'active' : ''}`}
+          className={`mobile-nav-overlay ${menuOpen ? "active" : ""}`}
           style={{
             position: "fixed",
             top: 0,
@@ -1058,7 +1125,7 @@ function WelcomePage() {
           }}
         >
           <div
-            className={`mobile-menu-container ${menuOpen ? 'active' : ''}`}
+            className={`mobile-menu-container ${menuOpen ? "active" : ""}`}
             style={{
               transform: menuOpen ? "scale(1)" : "scale(0.95)",
               opacity: menuOpen ? 1 : 0,
@@ -1111,7 +1178,7 @@ function WelcomePage() {
                 >
                   <Button
                     onClick={() => {
-                      navigate('/login');
+                      navigate("/login");
                       setMenuOpen(false);
                     }}
                     className="bg-white text-indigo-600 hover:bg-gray-100 py-2 px-4 rounded-full"
@@ -1120,7 +1187,7 @@ function WelcomePage() {
                   </Button>
                   <Button
                     onClick={() => {
-                      navigate('/signup');
+                      navigate("/signup");
                       setMenuOpen(false);
                     }}
                     className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-2 px-4 rounded-full"
@@ -1145,7 +1212,7 @@ function WelcomePage() {
                   exit={{ opacity: 0, y: -30 }}
                   transition={{ duration: 0.6, ease: "easeOut" }}
                 >
-                  <motion.div 
+                  <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}
@@ -1153,17 +1220,17 @@ function WelcomePage() {
                   >
                     {slide.icon}
                   </motion.div>
-                  
+
                   <motion.div
                     initial={{ y: 30, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.3, duration: 0.6, ease: "easeOut" }}
-                    style={{zIndex: 50}}
+                    style={{ zIndex: 50 }}
                   >
                     <Badge className="mb-6 py-1.5 px-5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium text-sm shadow-md rounded-full z-50">
                       {slide.badge}
                     </Badge>
-                    
+
                     <BlurText
                       text={slide.title}
                       delay={150}
@@ -1172,37 +1239,47 @@ function WelcomePage() {
                       onAnimationComplete={handleAnimationComplete}
                       className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight tracking-tight"
                     />
-                    
+
                     <p className="text-xl text-gray-600 mb-10 leading-relaxed max-w-md mx-auto md:mx-0">
                       {slide.subtitle}
                     </p>
-                    
+
                     {slide.final && (
                       <motion.div
                         initial={{ y: 30, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.5, duration: 0.6, ease: "easeOut" }}
+                        transition={{
+                          delay: 0.5,
+                          duration: 0.6,
+                          ease: "easeOut",
+                        }}
                       >
                         <Button
-                          onClick={isLoggedIn ? handleDashboardNavigation : () => navigate('/signup')}
+                          onClick={
+                            isLoggedIn
+                              ? handleDashboardNavigation
+                              : () => navigate("/signup")
+                          }
                           className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-4 text-lg font-medium rounded-xl shadow-lg hover:shadow-xl transition-all z-10"
                         >
-                          {isLoggedIn ? 'Go to Dashboard' : 'Start Your Learning Journey'}
+                          {isLoggedIn
+                            ? "Go to Dashboard"
+                            : "Start Your Learning Journey"}
                         </Button>
                       </motion.div>
                     )}
                   </motion.div>
                 </motion.div>
               </AnimatePresence>
-              
+
               <div className="flex space-x-3 mt-10">
                 {slides.map((_, index) => (
                   <motion.button
                     key={index}
                     onClick={() => handleSlideChange(index)}
                     className={`h-3 w-12 rounded-full transition-all duration-300 ${
-                      index === currentSlide 
-                        ? "bg-indigo-600 w-16" 
+                      index === currentSlide
+                        ? "bg-indigo-600 w-16"
                         : "bg-gray-300 hover:bg-gray-400"
                     }`}
                     aria-label={`Go to slide ${index + 1}`}
@@ -1212,8 +1289,8 @@ function WelcomePage() {
                 ))}
               </div>
             </div>
-            
-            <motion.div 
+
+            <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
@@ -1234,18 +1311,27 @@ function WelcomePage() {
             </motion.div>
           </div>
         </div>
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1, y: [0, 15, 0] }}
-          transition={{ delay: 1, duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          transition={{
+            delay: 1,
+            duration: 1.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
           className="absolute bottom-6 left-0 right-0 flex justify-center"
         >
-          <div 
-            className="flex flex-col items-center cursor-pointer" 
-            onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
+          <div
+            className="flex flex-col items-center cursor-pointer"
+            onClick={() =>
+              window.scrollTo({ top: window.innerHeight, behavior: "smooth" })
+            }
           >
-            <span className="text-sm text-gray-600 mb-2 font-medium tracking-wide pt-3">Scroll to Explore</span>
+            <span className="text-sm text-gray-600 mb-2 font-medium tracking-wide pt-3">
+              Scroll to Explore
+            </span>
             <div className="w-6 h-10 border-2 border-gray-400 rounded-full flex justify-center pt-2">
               <div className="w-1.5 h-3 bg-gray-400 rounded-full animate-bounce"></div>
             </div>
@@ -1262,37 +1348,49 @@ function WelcomePage() {
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="text-center mb-16"
           >
-            <Badge className="mb-4 bg-indigo-100 text-indigo-600 py-1 px-5 shadow-md rounded-full">IMMERSIVE LEARNING</Badge>
-            <h2 className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent pb-1">Experience Education Reimagined</h2>
+            <Badge className="mb-4 bg-indigo-100 text-indigo-600 py-1 px-5 shadow-md rounded-full">
+              IMMERSIVE LEARNING
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent pb-1">
+              Experience Education Reimagined
+            </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              EduVerse brings learning to life with interactive experiences and cutting-edge technology
+              EduVerse brings learning to life with interactive experiences and
+              cutting-edge technology
             </p>
           </motion.div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
                 icon: <School className="w-12 h-12 text-indigo-600" />,
                 title: "Virtual Classrooms",
-                description: "Immerse yourself in 3D learning environments with interactive whiteboards and real-time collaboration.",
+                description:
+                  "Immerse yourself in 3D learning environments with interactive whiteboards and real-time collaboration.",
               },
               {
                 icon: <PenTool className="w-12 h-12 text-indigo-600" />,
                 title: "Interactive Tools",
-                description: "Engage with dynamic study tools like virtual labs, simulations, AI-driven quizzes and their solutions.",
+                description:
+                  "Engage with dynamic study tools like virtual labs, simulations, AI-driven quizzes and their solutions.",
               },
               {
                 icon: <Book className="w-12 h-12 text-indigo-600" />,
                 title: "Smart Resources",
-                description: "Access a vast library of resources with AI-powered search and personalized recommendations.",
-              }
+                description:
+                  "Access a vast library of resources with AI-powered search and personalized recommendations.",
+              },
             ].map((item, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.6, delay: index * 0.2, ease: "easeOut" }}
+                transition={{
+                  duration: 0.6,
+                  delay: index * 0.2,
+                  ease: "easeOut",
+                }}
               >
                 <SpotlightCard
                   spotlightColor="rgba(139, 92, 246, 0.25)"
@@ -1304,7 +1402,9 @@ function WelcomePage() {
                   >
                     {item.icon}
                   </motion.div>
-                  <h3 className="text-xl font-bold mb-3 text-gray-900">{item.title}</h3>
+                  <h3 className="text-xl font-bold mb-3 text-gray-900">
+                    {item.title}
+                  </h3>
                   <p className="text-gray-600">{item.description}</p>
                 </SpotlightCard>
               </motion.div>
@@ -1322,10 +1422,15 @@ function WelcomePage() {
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="text-center mb-16"
           >
-            <Badge className="mb-4 bg-indigo-100 text-indigo-600 py-1 px-5 shadow-md rounded-full">WHY CHOOSE EDUVERSE</Badge>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent pb-1">Transform Your Learning Experience</h2>
+            <Badge className="mb-4 bg-indigo-100 text-indigo-600 py-1 px-5 shadow-md rounded-full">
+              WHY CHOOSE EDUVERSE
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent pb-1">
+              Transform Your Learning Experience
+            </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Our platform combines cutting-edge technology with expert instruction to create a truly personalized educational journey.
+              Our platform combines cutting-edge technology with expert
+              instruction to create a truly personalized educational journey.
             </p>
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
@@ -1340,17 +1445,19 @@ function WelcomePage() {
                 hue={322}
                 forceHoverState={false}
               />
-              <div style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                fontSize: '24px',
-                fontWeight: 'bold',
-                color: '#7b61ff',
-                textAlign: 'center',
-                pointerEvents: 'none'
-              }}>
+              <div
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  fontSize: "24px",
+                  fontWeight: "bold",
+                  color: "#7b61ff",
+                  textAlign: "center",
+                  pointerEvents: "none",
+                }}
+              >
                 EduVerse
               </div>
             </motion.div>
@@ -1363,7 +1470,11 @@ function WelcomePage() {
                 initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.6, delay: index * 0.2, ease: "easeOut" }}
+                transition={{
+                  duration: 0.6,
+                  delay: index * 0.2,
+                  ease: "easeOut",
+                }}
               >
                 <SpotlightCard
                   spotlightColor="rgba(139, 92, 246, 0.25)"
@@ -1375,7 +1486,9 @@ function WelcomePage() {
                   >
                     {feature.icon}
                   </motion.div>
-                  <h3 className="text-xl font-bold mb-3 text-gray-900">{feature.title}</h3>
+                  <h3 className="text-xl font-bold mb-3 text-gray-900">
+                    {feature.title}
+                  </h3>
                   <p className="text-gray-600">{feature.description}</p>
                 </SpotlightCard>
               </motion.div>
@@ -1401,7 +1514,8 @@ function WelcomePage() {
               What Our Learners Say
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Hear from our community about how EduVerse has transformed their learning experience.
+              Hear from our community about how EduVerse has transformed their
+              learning experience.
             </p>
           </motion.div>
 
@@ -1412,7 +1526,11 @@ function WelcomePage() {
                 initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.6, delay: index * 0.2, ease: "easeOut" }}
+                transition={{
+                  duration: 0.6,
+                  delay: index * 0.2,
+                  ease: "easeOut",
+                }}
               >
                 <SpotlightCard
                   spotlightColor="rgba(139, 92, 246, 0.25)"
@@ -1422,7 +1540,11 @@ function WelcomePage() {
                     {[...Array(5)].map((_, j) => (
                       <svg
                         key={j}
-                        className={`w-5 h-5 ${j < Math.floor(testimonial.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
+                        className={`w-5 h-5 ${
+                          j < Math.floor(testimonial.rating)
+                            ? "text-yellow-400"
+                            : "text-gray-300"
+                        }`}
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -1436,8 +1558,12 @@ function WelcomePage() {
                       {testimonial.author.charAt(0)}
                     </div>
                     <div className="ml-3">
-                      <h4 className="font-bold text-gray-900">{testimonial.author}</h4>
-                      <p className="text-sm text-gray-500">{testimonial.role}</p>
+                      <h4 className="font-bold text-gray-900">
+                        {testimonial.author}
+                      </h4>
+                      <p className="text-sm text-gray-500">
+                        {testimonial.role}
+                      </p>
                     </div>
                   </div>
                 </SpotlightCard>
@@ -1461,17 +1587,19 @@ function WelcomePage() {
               Ready to Transform Your Future?
             </h2>
             <p className="text-xl mb-10 max-w-2xl mx-auto opacity-90">
-              Join EduVerse today and unlock a world of knowledge with personalized learning and a supportive community.
+              Join EduVerse today and unlock a world of knowledge with
+              personalized learning and a supportive community.
             </p>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button
-                onClick={isLoggedIn ? handleDashboardNavigation : () => navigate('/signup')}
+                onClick={
+                  isLoggedIn
+                    ? handleDashboardNavigation
+                    : () => navigate("/signup")
+                }
                 className="bg-white text-indigo-600 hover:bg-gray-100 px-8 py-4 text-lg font-medium rounded-xl shadow-lg hover:shadow-xl transition-all"
               >
-                {isLoggedIn ? 'Go to Dashboard' : 'Get Started Now'}
+                {isLoggedIn ? "Go to Dashboard" : "Get Started Now"}
               </Button>
             </motion.div>
           </motion.div>
@@ -1498,7 +1626,8 @@ function WelcomePage() {
                 </span>
               </div>
               <p className="text-sm opacity-80">
-                Empowering learners worldwide with innovative education solutions.
+                Empowering learners worldwide with innovative education
+                solutions.
               </p>
             </motion.div>
 
@@ -1509,7 +1638,9 @@ function WelcomePage() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
             >
-              <h4 className="text-lg font-semibold text-white mb-4">Quick Links</h4>
+              <h4 className="text-lg font-semibold text-white mb-4">
+                Quick Links
+              </h4>
               <ul className="space-y-2">
                 {[
                   { name: "Home", path: "/" },
@@ -1536,7 +1667,9 @@ function WelcomePage() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
             >
-              <h4 className="text-lg font-semibold text-white mb-4">Resources</h4>
+              <h4 className="text-lg font-semibold text-white mb-4">
+                Resources
+              </h4>
               <ul className="space-y-2">
                 {[
                   { name: "Blog", path: "/blog" },
@@ -1562,10 +1695,28 @@ function WelcomePage() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}
             >
-              <h4 className="text-lg font-semibold text-white mb-4">Contact Us</h4>
+              <h4 className="text-lg font-semibold text-white mb-4">
+                Contact Us
+              </h4>
               <ul className="space-y-2 text-sm">
-                <li>Email: <a href="mailto:support@eduverse.com" className="hover:text-indigo-400 transition-colors">support@eduverse.com</a></li>
-                <li>Phone: <a href="tel:+1234567890" className="hover:text-indigo-400 transition-colors">+1 234 567 890</a></li>
+                <li>
+                  Email:{" "}
+                  <a
+                    href="mailto:support@eduverse.com"
+                    className="hover:text-indigo-400 transition-colors"
+                  >
+                    support@eduverse.com
+                  </a>
+                </li>
+                <li>
+                  Phone:{" "}
+                  <a
+                    href="tel:+1234567890"
+                    className="hover:text-indigo-400 transition-colors"
+                  >
+                    +1 234 567 890
+                  </a>
+                </li>
                 <li>Address: 123 Learning Lane, EduCity, 90210</li>
               </ul>
             </motion.div>
