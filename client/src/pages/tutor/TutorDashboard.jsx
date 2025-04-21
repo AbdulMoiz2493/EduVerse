@@ -3,44 +3,88 @@ import { Link, useNavigate } from "react-router-dom";
 import { courseApi, api } from "../../utils/api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../hooks/use-toast";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { 
-  Plus, 
-  Book, 
-  Edit, 
-  Users, 
-  ArrowRight, 
-  GraduationCap,
+import { motion, AnimatePresence } from "framer-motion";
+import SpotlightCard from "../SpotlightCard/SpotlightCard";
+import "../SpotlightCard/SpotlightCard.css";
+import {
+  Search,
+  Book,
   BookOpen,
+  GraduationCap,
+  Play,
   Star,
   Trash2,
+  ArrowRight,
+  Users,
   Home,
-  LayoutDashboard,
-  LogOut
+  LogOut,
+  Bell,
+  Info,
+  Contact,
+  Menu,
+  X,
+  Edit,
+  Plus,
 } from "lucide-react";
-import { Play } from "../../components/Play";
-import { Calendar } from "../../components/Calendar";
-import { motion } from "framer-motion";
+
+// Reusable Components
+const Badge = ({ children, className, ...props }) => {
+  return (
+    <motion.span
+      className={`inline-flex items-center rounded-full px-4 py-1 text-sm font-medium ${className}`}
+      whileHover={{ scale: 1.1, rotate: 3 }}
+      whileTap={{ scale: 0.95 }}
+      {...props}
+    >
+      {children}
+    </motion.span>
+  );
+};
+
+const Button = ({ children, className, ...props }) => {
+  return (
+    <motion.button
+      className={`inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 ${className}`}
+      whileHover={{ scale: 1.05, boxShadow: "0 10px 20px rgba(0,0,0,0.2)" }}
+      whileTap={{ scale: 0.95 }}
+      {...props}
+    >
+      {children}
+    </motion.button>
+  );
+};
 
 export const TutorDashboard = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
   const { user, setUser } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchData = async () => {
       try {
+        // Fetch tutor courses
         const res = await courseApi.getTutorCourses();
         setCourses(res.data);
+
+        // Fetch notifications (assuming endpoint exists)
+        const notificationsRes = await api.get("/api/notifications");
+        setNotifications(notificationsRes.data);
+
+        const unreadCountRes = await api.get("/api/notifications/unread-count");
+        setUnreadCount(unreadCountRes.data.count);
       } catch (error) {
-        console.error("Error fetching courses:", error);
+        console.error("Error fetching data:", error);
         toast({
           title: "Error",
-          description: "Failed to load your courses. Please try again later.",
+          description: "Failed to load data. Please try again later.",
           variant: "destructive",
         });
       } finally {
@@ -48,10 +92,10 @@ export const TutorDashboard = () => {
       }
     };
 
-    fetchCourses();
+    fetchData();
   }, [toast]);
 
-  // Function to handle course deletion
+  // Handle course deletion
   const handleDeleteCourse = async (courseId) => {
     if (!window.confirm("Are you sure you want to delete this course? This action cannot be undone.")) {
       return;
@@ -76,311 +120,677 @@ export const TutorDashboard = () => {
   };
 
   // Handle logout
+  const handleLogout = async () => {
+    try {
+      await api.post("/logout");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      navigate("/login");
+    }
+  };
 
-    const handleLogout = async () => {
-      try {
-        await authApi.logout();
-      } catch (error) {
-        console.error('Logout failed:', error);
-        // Fallback to manual logout if API call fails
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        navigate('/login');
-      }
+  // Handle notifications
+  const handleMarkAsRead = async (notificationId) => {
+    try {
+      await api.put(`/api/notifications/${notificationId}/read`);
+      setNotifications(
+        notifications.map((n) =>
+          n._id === notificationId ? { ...n, read: true } : n
+        )
+      );
+      setUnreadCount(unreadCount - 1);
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      toast({
+        title: "Error",
+        description: "Failed to mark notification as read.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      const res = await api.put("/api/notifications/read-all");
+      setNotifications(res.data);
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      toast({
+        title: "Error",
+        description: "Failed to mark all notifications as read.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const filteredCourses = courses.filter(
+    (course) =>
+      course &&
+      (course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.description.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
     };
+  }, [menuOpen]);
+
+  const navItems = [
+    { name: "Home", path: "/", icon: <Home className="w-4 h-4" /> },
+    { name: "About", path: "/about", icon: <Info className="w-4 h-4" /> },
+    {
+      name: "Courses",
+      path: "/courses",
+      icon: <BookOpen className="w-4 h-4" />,
+    },
+    {
+      name: "Contact",
+      path: "/contact",
+      icon: <Contact className="w-4 h-4" />,
+    },
+    {
+      name: "Dashboard",
+      path: "/tutor",
+      icon: <BookOpen className="w-4 h-4" />,
+    },
+  ];
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-50 to-white">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white">
-      {/* Header */}
-      <header className="bg-white shadow sticky top-0 z-10 backdrop-blur-md bg-white/90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-              className="flex items-center gap-2"
+    <div className="min-h-screen bg-gray-50 relative overflow-x-hidden">
+      <style>
+        {`
+          .section-bg {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.3));
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+          }
+
+          .nav-link {
+            position: relative;
+            overflow: hidden;
+          }
+
+          .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, #4f46e5, #a855f7);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+          }
+
+          .nav-link:hover::after {
+            transform: translateX(0);
+          }
+        `}
+      </style>
+
+      {/* Navbar */}
+      <div className="fixed top-4 left-0 right-0 flex justify-center z-50 px-6">
+        <motion.div
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          className="rounded-full py-1 px-3 bg-white/40 backdrop-blur-xl shadow-xl [backdrop-filter:blur(12px)] [-webkit-backdrop-filter:blur(12px)] flex items-center justify-between w-full max-w-4xl border border-white/20 h-11 relative"
+        >
+          <div className="flex items-center gap-1.5">
+            <motion.div
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              className="bg-gradient-to-r from-indigo-600 to-purple-500 w-7 h-7 rounded-full flex items-center justify-center text-white shadow-lg"
             >
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-500 w-10 h-10 rounded-xl flex items-center justify-center text-white">
-                <span className="font-bold text-xl">E</span>
-              </div>
-              <span className="font-bold text-xl bg-gradient-to-r from-indigo-700 to-purple-600 bg-clip-text text-transparent">EduVerse</span>
+              <span className="font-bold text-base">E</span>
             </motion.div>
-            <div className="flex items-center space-x-4 relative">
+            <span className="font-bold text-base bg-gradient-to-r from-indigo-700 to-purple-600 bg-clip-text text-transparent">
+              EduVerse
+            </span>
+          </div>
+
+          <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2 gap-0.5 z-50">
+            {navItems.map((item, index) => (
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4 }}
-                className="hidden md:block"
+                key={index}
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <Badge className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-3 py-1">
-                  Tutor
-                </Badge>
-              </motion.div>
-              <motion.div 
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-                className="flex items-center space-x-2 cursor-pointer"
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-              >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-600 to-purple-500 flex items-center justify-center text-white">
-                  {user?.name?.charAt(0) || "T"}
-                </div>
-                <p className="text-gray-700 hidden md:block">
-                  Welcome, {user?.name}
-                </p>
-              </motion.div>
-              {dropdownOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-50"
+                <Link
+                  to={item.path}
+                  className="flex items-center gap-1 px-2.5 py-1 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all font-medium text-xs nav-link"
                 >
-                  <Link to="/" className="flex items-center px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700">
-                    <Home className="w-4 h-4 mr-2" />
-                    Home
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center w-full text-left px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
-                  </button>
-                </motion.div>
+                  {item.icon}
+                  {item.name}
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <motion.div
+              className="relative cursor-pointer"
+              onClick={() => setNotificationOpen(!notificationOpen)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Bell className="w-5 h-5 text-gray-700" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                  {unreadCount}
+                </span>
               )}
+            </motion.div>
+
+            <motion.div
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <div className="w-7 h-7 rounded-full bg-gradient-to-r from-indigo-600 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                {user?.name?.charAt(0) || "T"}
+              </div>
+              <span className="text-gray-700 font-medium hidden md:block text-xs">
+                {user?.name}
+              </span>
+            </motion.div>
+
+            <div className="relative z-50 md:hidden transition !hover:transform-none">
+              <Button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="bg-transparent text-gray-600 hover:text-indigo-600"
+              >
+                {menuOpen ? (
+                  <X className="w-6 h-6" />
+                ) : (
+                  <Menu className="w-6 h-6" />
+                )}
+              </Button>
             </div>
           </div>
+
+          <AnimatePresence>
+            {notificationOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-100 z-50 max-h-96 overflow-y-auto"
+              >
+                <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+                  <span className="font-semibold text-gray-900">
+                    Notifications
+                  </span>
+                  {unreadCount > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleMarkAllAsRead}
+                      className="text-indigo-600 hover:text-indigo-700 text-xs"
+                    >
+                      Mark all as read
+                    </Button>
+                  )}
+                </div>
+                {notifications.length === 0 ? (
+                  <div className="p-4 text-center text-gray-600">
+                    No notifications
+                  </div>
+                ) : (
+                  notifications.map((notification) => (
+                    <div
+                      key={notification._id}
+                      className={`p-4 border-b border-gray-100 hover:bg-indigo-50 cursor-pointer flex justify-between items-start ${
+                        notification.read ? "bg-gray-50" : "bg-white"
+                      }`}
+                      onClick={() => {
+                        if (!notification.read)
+                          handleMarkAsRead(notification._id);
+                        if (
+                          notification.course &&
+                          notification.type !== "new_message"
+                        ) {
+                          navigate(`/course/${notification.course._id}`);
+                        } else if (notification.type === "new_message") {
+                          navigate(`/course/${notification.course._id}`);
+                        }
+                        setNotificationOpen(false);
+                      }}
+                    >
+                      <div>
+                        <p className="text-sm text-gray-900">
+                          {notification.message}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                      {!notification.read && (
+                        <span className="w-2 h-2 bg-indigo-600 rounded-full mt-1"></span>
+                      )}
+                    </div>
+                  ))
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {dropdownOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 z-50"
+            >
+              {navItems.map((item, index) => (
+                <Link
+                  key={index}
+                  to={item.path}
+                  className="flex items-center px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 text-sm"
+                  onClick={() => setDropdownOpen(false)}
+                >
+                  {item.icon}
+                  <span className="ml-2">{item.name}</span>
+                </Link>
+              ))}
+              <button
+                onClick={() => {
+                  handleLogout();
+                  setDropdownOpen(false);
+                }}
+                className="flex items-center w-full text-left px-4 py-2 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 text-sm"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </button>
+            </motion.div>
+          )}
+        </motion.div>
+      </div>
+
+      {/* Mobile Navigation Overlay */}
+      <div
+        className={`mobile-nav-overlay ${menuOpen ? "active" : ""}`}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          backgroundColor: "rgba(10, 10, 10, 0.9)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+          zIndex: 999,
+          opacity: menuOpen ? 1 : 0,
+          visibility: menuOpen ? "visible" : "hidden",
+          transition: "opacity 0.3s ease, visibility 0.3s ease",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          pointerEvents: menuOpen ? "auto" : "none",
+        }}
+      >
+        <div
+          className={`mobile-menu-container ${menuOpen ? "active" : ""}`}
+          style={{
+            transform: menuOpen ? "scale(1)" : "scale(0.95)",
+            opacity: menuOpen ? 1 : 0,
+            transition: "transform 0.4s ease, opacity 0.4s ease",
+          }}
+        >
+          <div className="flex flex-col items-center justify-center text-center w-full">
+            {navItems.map((item, index) => (
+              <motion.div
+                key={item.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: menuOpen ? 1 : 0, y: menuOpen ? 0 : 20 }}
+                transition={{ delay: index * 0.1, duration: 0.3 }}
+                className="my-4"
+              >
+                <Link
+                  to={item.path}
+                  onClick={() => setMenuOpen(false)}
+                  className="text-white text-xl hover:text-indigo-400 transition-all flex items-center gap-2"
+                >
+                  {item.icon}
+                  {item.name}
+                </Link>
+              </motion.div>
+            ))}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: menuOpen ? 1 : 0, y: menuOpen ? 0 : 20 }}
+              transition={{ delay: navItems.length * 0.1, duration: 0.3 }}
+              className="mt-4"
+            >
+              <Button
+                onClick={() => {
+                  handleLogout();
+                  setMenuOpen(false);
+                }}
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-2 px-4 rounded-full"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Log Out
+              </Button>
+            </motion.div>
+          </div>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="container mx-auto px-4 pt-24 pb-24">
         {/* Dashboard Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="text-center mb-16"
         >
-          <Badge className="mb-4 bg-indigo-100 text-indigo-700 py-1 px-4">YOUR TEACHING PLATFORM</Badge>
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-indigo-700 to-purple-700 bg-clip-text text-transparent">
+          <Badge className="mb-4 bg-indigo-100 text-indigo-600 py-1 px-5 shadow-md rounded-full">
+            YOUR TEACHING PLATFORM
+          </Badge>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
             Tutor Dashboard
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Manage your courses, track student progress, and create engaging learning experiences.
+            Create and manage your courses, engage with students, and inspire the next generation of learners.
           </p>
-        </motion.div>
-        
-        {/* Create Course Button */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="mb-8 flex justify-end"
-        >
-          <Link to="/tutor/create-course">
-            <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg transition-all text-white">
-              <Plus className="mr-2 h-5 w-5" /> Create New Course
-            </Button>
-          </Link>
         </motion.div>
 
         {/* Stats and Overview */}
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16"
         >
-          <div className="bg-white shadow-lg rounded-xl p-6 hover:shadow-xl transition-all border border-indigo-50 group">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">Total Courses</h3>
-            <div className="flex items-center">
-              <div className="bg-indigo-50 p-4 rounded-xl w-16 h-16 flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
-                <Book className="w-8 h-8 text-indigo-600" />
-              </div>
-              <span className="text-3xl font-bold ml-4 bg-gradient-to-r from-indigo-700 to-purple-600 bg-clip-text text-transparent">{courses.length}</span>
-            </div>
-          </div>
-          
-          <div className="bg-white shadow-lg rounded-xl p-6 hover:shadow-xl transition-all border border-indigo-50 group">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">Total Videos</h3>
-            <div className="flex items-center">
-              <div className="bg-indigo-50 p-4 rounded-xl w-16 h-16 flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
-                <Play className="w-8 h-8 text-indigo-600" />
-              </div>
-              <span className="text-3xl font-bold ml-4 bg-gradient-to-r from-indigo-700 to-purple-600 bg-clip-text text-transparent">
-                {courses.reduce((total, course) => total + (course.videos?.length || 0), 0)}
-              </span>
-            </div>
-          </div>
-          
-          <div className="bg-white shadow-lg rounded-xl p-6 hover:shadow-xl transition-all border border-indigo-50 group">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">Your Rating</h3>
-            <div className="flex items-center">
-              <div className="bg-indigo-50 p-4 rounded-xl w-16 h-16 flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
-                <Star className="w-8 h-8 text-yellow-500" />
-              </div>
-              <span className="text-3xl font-bold ml-4 bg-gradient-to-r from-indigo-700 to-purple-600 bg-clip-text text-transparent">4.8</span>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Course List */}
-        <motion.section
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
-          <div className="flex items-center mb-6">
-            <GraduationCap className="mr-2 w-6 h-6 text-indigo-600" />
-            <h2 className="text-2xl font-bold text-gray-900">Your Courses</h2>
-          </div>
-
-          {courses.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-lg p-8 text-center border border-indigo-50">
-              <div className="w-24 h-24 rounded-full bg-indigo-50 flex items-center justify-center mx-auto mb-6">
-                <Book className="w-12 h-12 text-indigo-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">No courses yet</h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                Create your first course to start teaching students and share your knowledge
-              </p>
-              <Link to="/tutor/create-course">
-                <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg transition-all text-white px-6">
-                  <Plus className="mr-2 h-5 w-5" /> Create New Course
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-6">
-              {courses.map((course) => (
-                <div 
-                  key={course._id} 
-                  className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all border border-indigo-50 group"
-                >
-                  <div className="flex flex-col md:flex-row">
-                    {/* Course Thumbnail */}
-                    <div className="md:w-64 h-48 md:h-auto bg-indigo-50 relative overflow-hidden">
-                      {course.thumbnail ? (
-                        <img 
-                          src={`https://web-dev-marathon-production.up.railway.app/${course.thumbnail}`} 
-                          alt={course.title} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100">
-                          <Book className="w-16 h-16 text-indigo-500" />
-                        </div>
-                      )}
-                      <div className="absolute top-2 right-2 md:hidden">
-                        <Badge className="bg-indigo-500/80 backdrop-blur-sm text-white">{course.category || "Course"}</Badge>
-                      </div>
-                    </div>
-                    
-                    {/* Course Details */}
-                    <div className="p-6 flex-1">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="text-xl font-bold text-gray-900 group-hover:text-indigo-700 transition-colors">
-                          {course.title}
-                        </h3>
-                        <Badge className="bg-indigo-500/80 text-white hidden md:flex">{course.category || "Course"}</Badge>
-                      </div>
-                      
-                      <div className="mb-3 flex items-center">
-                        <div className="flex space-x-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <svg key={star} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3 .921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784 .57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118l-2.8-2.034c-.783-.57-.38-1.81 .588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z"></path>
-                            </svg>
-                          ))}
-                        </div>
-                        <span className="text-sm text-gray-500 ml-2">
-                          {(Math.random() * 1 + 4).toFixed(1)} ({Math.floor(Math.random() * 100 + 50)} reviews)
-                        </span>
-                      </div>
-                      
-                      <p className="text-gray-600 mb-4">
-                        {course.description.length > 150
-                          ? `${course.description.substring(0, 150)}...`
-                          : course.description}
-                      </p>
-                      
-                      <div className="flex flex-wrap items-center text-sm text-gray-500 gap-x-6 gap-y-2 mb-4">
-                        <span className="flex items-center">
-                          <Play className="w-4 h-4 mr-1 text-indigo-500" />
-                          {course.videos?.length || 0} Videos
-                        </span>
-                        <span className="flex items-center">
-                          <Users className="w-4 h-4 mr-1 text-indigo-500" />
-                          {course.enrollments?.length || 0} Students
-                        </span>
-                        <span className="flex items-center">
-                          <Calendar className="w-4 h-4 mr-1 text-indigo-500" />
-                          Created {new Date(course.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-3">
-                        <Link to={`/tutor/edit-course/${course._id}`}>
-                          <Button variant="outline" size="sm" className="border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700">
-                            <Edit className="w-4 h-4 mr-1" /> Edit Course
-                          </Button>
-                        </Link>
-                        <Link to={`/tutor/course/${course._id}/enrollments`}>
-                          <Button variant="outline" size="sm" className="border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700">
-                            <Users className="w-4 h-4 mr-1" /> Students
-                          </Button>
-                        </Link>
-                        <Link to={`/course/${course._id}`}>
-                          <Button size="sm" className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white group">
-                            Preview <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                          </Button>
-                        </Link>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="border-red-200 hover:bg-red-50 hover:text-red-700 text-red-600"
-                          onClick={() => handleDeleteCourse(course._id)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" /> Delete
-                        </Button>
-                      </div>
-                    </div>
+          {[
+            {
+              icon: <Book className="w-12 h-12 text-indigo-600" />,
+              title: "Total Courses",
+              value: courses.length,
+              color: "from-indigo-500 to-blue-500",
+            },
+            {
+              icon: <Play className="w-12 h-12 text-purple-600" />,
+              title: "Total Videos",
+              value: courses.reduce((total, course) => total + (course.videos?.length || 0), 0),
+              color: "from-purple-500 to-pink-500",
+            },
+            {
+              icon: <Star className="w-12 h-12 text-yellow-500" />,
+              title: "Your Rating",
+              value: "4.8",
+              color: "from-yellow-500 to-orange-500",
+            },
+          ].map((stat, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{
+                duration: 0.6,
+                delay: index * 0.2,
+                ease: "easeOut",
+              }}
+            >
+              <SpotlightCard
+                spotlightColor="rgba(139, 92, 246, 0.25)"
+                className="group bg-white rounded-xl shadow-lg border border-gray-100"
+              >
+                <div className="p-6">
+                  <motion.div
+                    whileHover={{ rotate: 5, scale: 1.1 }}
+                    className="bg-indigo-50 p-4 rounded-xl w-16 h-16 flex items-center justify-center mb-4 group-hover:bg-indigo-100 transition-colors"
+                  >
+                    {stat.icon}
+                  </motion.div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                    {stat.title}
+                  </h3>
+                  <div className="flex items-center">
+                    <span
+                      className={`text-3xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}
+                    >
+                      {stat.value}
+                    </span>
                   </div>
                 </div>
-              ))}
+                <div className={`h-1 bg-gradient-to-r ${stat.color}`}></div>
+              </SpotlightCard>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* Search and Course List */}
+        <motion.section
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+        >
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div className="flex items-center mb-4 md:mb-0">
+              <GraduationCap className="w-6 h-6 mr-2 text-indigo-600" />
+              <h2 className="text-2xl font-bold text-gray-900">Your Courses</h2>
+            </div>
+
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <Link to="/tutor/create-course">
+                <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl">
+                  <Plus className="w-4 h-4 mr-2" /> Create New Course
+                </Button>
+              </Link>
+              <div className="relative w-full md:w-auto">
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
+                <input
+                  type="text"
+                  placeholder="Search courses..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500/20 w-full md:w-64 bg-white/80 backdrop-blur-sm"
+                />
+              </div>
+            </div>
+          </div>
+
+          {filteredCourses.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            >
+              <SpotlightCard
+                spotlightColor="rgba(139, 92, 246, 0.25)"
+                className="bg-white rounded-xl shadow-lg p-8 text-center border border-dashed border-gray-300"
+              >
+                {searchTerm ? (
+                  <>
+                    <Search className="w-16 h-16 text-indigo-400 mx-auto mb-4" />
+                    <p className="text-gray-600">
+                      No courses found matching "{searchTerm}".
+                    </p>
+                    <p className="text-gray-600 mt-2">
+                      Try adjusting your search terms or create a new course.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Book className="w-16 h-16 text-indigo-400 mx-auto mb-4" />
+                    <p className="text-gray-600 mb-2">
+                      You haven't created any courses yet.
+                    </p>
+                    <p className="text-gray-600 mb-6">
+                      Start by creating your first course to share your knowledge.
+                    </p>
+                    <Link to="/tutor/create-course">
+                      <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl">
+                        <Plus className="w-4 h-4 mr-2" /> Create New Course
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </SpotlightCard>
+            </motion.div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredCourses.map(
+                (course) =>
+                  course && (
+                    <motion.div
+                      key={course._id}
+                      initial={{ opacity: 0, y: 50 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "-50px" }}
+                      transition={{ duration: 0.6, ease: "easeOut" }}
+                    >
+                      <SpotlightCard
+                        spotlightColor="rgba(139, 92, 246, 0.25)"
+                        className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 group"
+                      >
+                        <div className="h-48 relative overflow-hidden">
+                          {course.thumbnail ? (
+                            <img
+                              src={`https://web-dev-marathon-production.up.railway.app/${course.thumbnail}`}
+                              alt={course.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100">
+                              <Book className="w-12 h-12 text-indigo-400" />
+                            </div>
+                          )}
+                          <div className="absolute top-2 right-2">
+                            <Badge className="bg-indigo-500/80 backdrop-blur-sm text-white">
+                              {course.category || "Course"}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="p-6 flex flex-col flex-1">
+                          <h3 className="font-semibold text-lg text-gray-900 mb-2 group-hover:text-indigo-700 transition-colors">
+                            {course.title}
+                          </h3>
+                          <div className="mb-2 flex items-center">
+                            <div className="flex space-x-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <svg
+                                  key={star}
+                                  className="w-4 h-4 text-yellow-400"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3 .921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784 .57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118l-2.8-2.034c-.783-.57-.38-1.81 .588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z"></path>
+                                </svg>
+                              ))}
+                            </div>
+                            <span className="text-sm text-gray-500 ml-2">
+                              {(Math.random() * 1 + 4).toFixed(1)} (
+                              {Math.floor(Math.random() * 100 + 50)} reviews)
+                            </span>
+                          </div>
+                          <p className="text-gray-600 text-sm mb-4 flex-1">
+                            {course.description?.length > 100
+                              ? `${course.description.substring(0, 100)}...`
+                              : course.description ||
+                                "No description available"}
+                          </p>
+                          <div className="mt-auto">
+                            <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
+                              <span className="flex items-center">
+                                <Users className="w-4 h-4 mr-1" />
+                                {course.enrollments?.length || 0} students
+                              </span>
+                              <span className="flex items-center">
+                                <BookOpen className="w-4 h-4 mr-1" />
+                                {course.videos?.length || 0} videos
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-3">
+                              <Link to={`/tutor/edit-course/${course._id}`}>
+                                <Button
+                                  variant="outline"
+                                  className="border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 text-indigo-600 px-4 py-2 rounded-xl"
+                                >
+                                  <Edit className="w-4 h-4 mr-1" /> Edit
+                                </Button>
+                              </Link>
+                              <Link to={`/tutor/course/${course._id}/enrollments`}>
+                                <Button
+                                  variant="outline"
+                                  className="border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 text-indigo-600 px-4 py-2 rounded-xl"
+                                >
+                                  <Users className="w-4 h-4 mr-1" /> Students
+                                </Button>
+                              </Link>
+                              <Link to={`/course/${course._id}`}>
+                                <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2 rounded-xl group">
+                                  Preview
+                                  <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                </Button>
+                              </Link>
+                              <Button
+                                variant="outline"
+                                className="border-red-200 hover:bg-red-50 hover:text-red-700 text-red-600 px-4 py-2 rounded-xl"
+                                onClick={() => handleDeleteCourse(course._id)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-1" /> Delete
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </SpotlightCard>
+                    </motion.div>
+                  )
+              )}
             </div>
           )}
         </motion.section>
-        
+
         {/* Call to Action */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
           className="mt-16 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white text-center"
         >
           <div className="max-w-3xl mx-auto">
             <BookOpen className="w-16 h-16 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-4">Enhance Your Teaching with AI Tools</h2>
-            <p className="mb-6">
-              Create interactive lessons, generate engaging assessments, and leverage advanced analytics to improve student outcomes.
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">
+              Elevate Your Teaching with AI-Powered Tools
+            </h2>
+            <p className="mb-6 text-lg">
+              Create engaging courses, analyze student performance, and deliver personalized learning experiences with our AI-enhanced platform.
             </p>
-            <Button 
-              variant="outline" 
-              className="border-white text-indigo-700 hover:bg-blue-100 hover:text-indigo-700"
-            >
+            <Button className="bg-white text-indigo-600 hover:bg-gray-100 px-8 py-4 text-lg font-medium rounded-xl">
               Explore Teaching Tools
             </Button>
           </div>
@@ -388,25 +798,121 @@ export const TutorDashboard = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-8 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center gap-2 mb-4 md:mb-0">
-             028
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-500 w-8 h-8 rounded-lg flex items-center justify-center text-white">
-                <span className="font-bold">E</span>
+      <footer className="bg-gray-900 text-gray-300 py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-500 w-8 h-8 rounded-full flex items-center justify-center text-white shadow-lg">
+                  <span className="font-bold text-base">E</span>
+                </div>
+                <span className="font-bold text-lg bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                  EduVerse
+                </span>
               </div>
-              <span className="font-bold text-white">EduVerse</span>
-            </div>
-            <div className="flex flex-wrap justify-center gap-8">
-              <a href="#" className="hover:text-white transition-colors">Help Center</a>
-              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-white transition-colors">Contact Us</a>
-            </div>
+              <p className="text-sm opacity-80">
+                Empowering learners worldwide with innovative education
+                solutions.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+            >
+              <h4 className="text-lg font-semibold text-white mb-4">
+                Quick Links
+              </h4>
+              <ul className="space-y-2">
+                {[
+                  { name: "Home", path: "/" },
+                  { name: "About", path: "/about" },
+                  { name: "Courses", path: "/courses" },
+                  { name: "Contact", path: "/contact" },
+                ].map((link, index) => (
+                  <li key={index}>
+                    <Link
+                      to={link.path}
+                      className="text-sm hover:text-indigo-400 transition-colors"
+                    >
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
+            >
+              <h4 className="text-lg font-semibold text-white mb-4">
+                Resources
+              </h4>
+              <ul className="space-y-2">
+                {[
+                  { name: "Blog", path: "/blog" },
+                  { name: "FAQ", path: "/faq" },
+                  { name: "Support", path: "/support" },
+                ].map((link, index) => (
+                  <li key={index}>
+                    <Link
+                      to={link.path}
+                      className="text-sm hover:text-indigo-400 transition-colors"
+                    >
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}
+            >
+              <h4 className="text-lg font-semibold text-white mb-4">
+                Contact Us
+              </h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  Email:{" "}
+                  <a
+                    href="mailto:support@eduverse.com"
+                    className="hover:text-indigo-400 transition-colors"
+                  >
+                    support@eduverse.com
+                  </a>
+                </li>
+                <li>
+                  Phone:{" "}
+                  <a
+                    href="tel:+1234567890"
+                    className="hover:text-indigo-400 transition-colors"
+                  >
+                    +1 234 567 890
+                  </a>
+                </li>
+                <li>Address: 123 Learning Lane, EduCity, 90210</li>
+              </ul>
+            </motion.div>
           </div>
-          <div className="mt-6 text-center md:text-left">
-            <p className="text-sm">© 2025 EduVerse. All rights reserved.</p>
+
+          <div className="mt-12 pt-8 border-t border-gray-700 text-center">
+            <p className="text-sm opacity-80">
+              &copy; {new Date().getFullYear()} EduVerse. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { motion, AnimatePresence, useMotionValue, useAnimation } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useSprings, animated } from '@react-spring/web';
 import { 
   GraduationCap, 
@@ -18,16 +18,17 @@ import {
   Home,
   Contact,
   Menu,
-  X
+  X,
+  LayoutDashboard
 } from "lucide-react";
 import {
   Renderer,
   Program,
   Mesh,
   Triangle,
-  Transform,
   Vec3,
   Camera,
+  Transform
 } from "ogl";
 import SpotlightCard from "./SpotlightCard/SpotlightCard";
 import Aurora from "./Aurora/Aurora";
@@ -206,7 +207,7 @@ function Orb({
 
     const renderer = new Renderer({ alpha: true, premultipliedAlpha: false });
     const gl = renderer.gl;
-    gl.clearColor(0, 0, 0, 0); // Transparent background
+    gl.clearColor(0, 0, 0, 0);
     container.appendChild(gl.canvas);
 
     const geometry = new Triangle(gl);
@@ -783,6 +784,7 @@ function WelcomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const featuresRef = useRef(null);
@@ -790,7 +792,16 @@ function WelcomePage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const token = localStorage?.getItem('token');
+      const user = localStorage?.getItem('user');
       setIsLoggedIn(!!token);
+      if (user) {
+        try {
+          const parsedUser = JSON.parse(user);
+          setUserRole(parsedUser.role); // Assuming user object has a 'role' field ('student' or 'tutor')
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+        }
+      }
     }
   }, []);
 
@@ -835,13 +846,22 @@ function WelcomePage() {
     try {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      setIsLoggedIn(false);
+      setUserRole(null);
       navigate('/login');
     } catch (error) {
       console.error('Logout failed:', error);
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      setIsLoggedIn(false);
+      setUserRole(null);
       navigate('/login');
     }
+  };
+
+  const handleDashboardNavigation = () => {
+    const destination = userRole === 'tutor' ? '/tutor' : '/student';
+    navigate(destination);
   };
 
   const handleAnimationComplete = () => {
@@ -849,14 +869,19 @@ function WelcomePage() {
   };
 
   const navItems = [
-    { name: "Home", path: "/", icon: <Home className="w-3 h-3" /> },
-    { name: "About", path: "/about", icon: <Info className="w-3 h-3" /> },
-    { name: "Courses", path: "/courses", icon: <BookOpen className="w-3 h-3" /> },
-    { name: "Contact", path: "/contact", icon: <Contact className="w-3 h-3" /> },
+    { name: "Home", path: "/", icon: <Home className="w-4 h-4" /> },
+    { name: "About", path: "/about", icon: <Info className="w-4 h-4" /> },
+    { name: "Courses", path: "/courses", icon: <BookOpen className="w-4 h-4" /> },
+    { name: "Contact", path: "/contact", icon: <Contact className="w-4 h-4" /> },
+    ...(isLoggedIn ? [{
+      name: "Dashboard",
+      path: userRole === 'tutor' ? '/tutor' : '/student',
+      icon: <LayoutDashboard className="w-4 h-4" />
+    }] : []),
   ];
 
   return (
-    <div className="min-h-screen overflow-x-hidden relative bg-gray-50 ">
+    <div className="min-h-screen overflow-x-hidden relative bg-gray-50">
       <style>
         {`
           .orb-container {
@@ -864,7 +889,7 @@ function WelcomePage() {
             z-index: 2;
             width: 100%;
             height: 100%;
-            background: transparent; /* Ensure Orb background is transparent */
+            background: transparent;
           }
 
           .aurora-container {
@@ -874,32 +899,46 @@ function WelcomePage() {
             width: 100%;
             height: 100%;
             z-index: 0;
-            opacity: 0.2; /* Slightly transparent to blend with gradient */
+            opacity: 0.2;
           }
 
           .mobile-menu-toggle {
             position: fixed;
-            top: 24px; /* Adjusted position for mobile view */
+            top: 16px;
             right: 16px;
             z-index: 1000;
           }
+
           .section-bg {
             background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.3));
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
           }
+
+          .nav-link {
+            position: relative;
+            overflow: hidden;
+          }
+
+          .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, #4f46e5, #a855f7);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+          }
+
+          .nav-link:hover::after {
+            transform: translateX(0);
+          }
         `}
       </style>
       <div className={`relative min-h-screen transition-all duration-700 bg-gradient-to-br ${slide.bgGradient}`}>
-        {/* Aurora Background */}
-        <div className="aurora-container">
-          <Aurora
-            colorStops={["#7e22ce", "#a21caf", "#86198f"]}
-            amplitude={1.0}
-            blend={1.5}
-            speed={0.5}
-          />
-        </div>
+        
 
         {/* Navbar */}
         <div className="fixed top-4 left-0 right-0 flex justify-center z-50 px-6">
@@ -932,7 +971,7 @@ function WelcomePage() {
                 >
                   <Link
                     to={item.path}
-                    className="flex items-center gap-1 px-2.5 py-1 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all font-medium text-xs"
+                    className="flex items-center gap-1 px-2.5 py-1 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all font-medium text-xs nav-link"
                   >
                     {item.icon}
                     {item.name}
@@ -985,7 +1024,7 @@ function WelcomePage() {
             </div>
 
             {/* Mobile Menu Toggle */}
-            <div className="relative z-50 md:hidden mobile-menu-toggle -translate-y-3 transition !hover:transform-none">
+            <div className="relative z-50 md:hidden mobile-menu-toggle -translate-y-1 transition !hover:transform-none">
               <Button
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="relative z-50 bg-transparent text-gray-600 hover:text-indigo-600"
@@ -1049,7 +1088,7 @@ function WelcomePage() {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: menuOpen ? 1 : 0, y: menuOpen ? 0 : 20 }}
-                  transition={{ delay: 0.4, duration: 0.3 }}
+                  transition={{ delay: navItems.length * 0.1, duration: 0.3 }}
                   className="mt-4"
                 >
                   <Button
@@ -1067,7 +1106,7 @@ function WelcomePage() {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: menuOpen ? 1 : 0, y: menuOpen ? 0 : 20 }}
-                  transition={{ delay: 0.4, duration: 0.3 }}
+                  transition={{ delay: navItems.length * 0.1, duration: 0.3 }}
                   className="mt-4 flex flex-col gap-3"
                 >
                   <Button
@@ -1145,10 +1184,10 @@ function WelcomePage() {
                         transition={{ delay: 0.5, duration: 0.6, ease: "easeOut" }}
                       >
                         <Button
-                          onClick={() => navigate('/signup')}
+                          onClick={isLoggedIn ? handleDashboardNavigation : () => navigate('/signup')}
                           className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-4 text-lg font-medium rounded-xl shadow-lg hover:shadow-xl transition-all z-10"
                         >
-                          Start Your Learning Journey
+                          {isLoggedIn ? 'Go to Dashboard' : 'Start Your Learning Journey'}
                         </Button>
                       </motion.div>
                     )}
@@ -1411,7 +1450,7 @@ function WelcomePage() {
       {/* Call to Action Section */}
       <div className="py-24 bg-gradient-to-br from-indigo-600 to-purple-600 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 to-purple-500/20" />
-        <div className="container mx-auto px-4 relative z-10 text-center">
+        <div className="container mx-auto px-4 relative z-10 warme text-center">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -1429,10 +1468,10 @@ function WelcomePage() {
               whileTap={{ scale: 0.95 }}
             >
               <Button
-                onClick={() => navigate('/signup')}
+                onClick={isLoggedIn ? handleDashboardNavigation : () => navigate('/signup')}
                 className="bg-white text-indigo-600 hover:bg-gray-100 px-8 py-4 text-lg font-medium rounded-xl shadow-lg hover:shadow-xl transition-all"
               >
-                Get Started Now
+                {isLoggedIn ? 'Go to Dashboard' : 'Get Started Now'}
               </Button>
             </motion.div>
           </motion.div>
@@ -1539,8 +1578,7 @@ function WelcomePage() {
           </div>
         </div>
       </footer>
-  </div>
-  
+    </div>
   );
 }
 
