@@ -53,58 +53,7 @@ export const SignupPage = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-
-    try {
-      const loadScript = (src) => {
-        return new Promise((resolve, reject) => {
-          const script = document.createElement("script");
-          script.src = src;
-          script.async = true;
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
-      };
-
-      await loadScript("https://accounts.google.com/gsi/client");
-
-      window.google.accounts.id.initialize({
-        client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
-        callback: async (response) => {
-          try {
-            const user = await googleLogin(response.credential);
-            navigate(`/${user.role}`);
-            toast({
-              title: "Account created!",
-              description: "Successfully signed up with Google",
-              variant: "success",
-            });
-          } catch (error) {
-            console.error("Google signup error:", error);
-            toast({
-              title: "Signup failed",
-              description: "Could not authenticate with Google",
-              variant: "destructive",
-            });
-          } finally {
-            setLoading(false);
-          }
-        },
-      });
-
-      window.google.accounts.id.prompt();
-    } catch (error) {
-      console.error("Google script loading error:", error);
-      setLoading(false);
-      toast({
-        title: "Google Signup Unavailable",
-        description: "Could not load Google authentication services",
-        variant: "destructive",
-      });
-    }
-  };
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-100 via-purple-50 to-blue-100">
@@ -318,7 +267,6 @@ export const SignupPage = () => {
             <div className="mt-6">
               <Button
                 type="button"
-                onClick={handleGoogleLogin}
                 variant="outline"
                 className="w-full py-6 border border-gray-300 hover:bg-gray-50 transition-colors"
                 disabled={loading}
