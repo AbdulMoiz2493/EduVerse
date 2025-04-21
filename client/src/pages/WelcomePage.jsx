@@ -895,7 +895,6 @@ function WelcomePage() {
         <div className="aurora-container">
           <Aurora
             colorStops={["#7e22ce", "#a21caf", "#86198f"]}
-
             amplitude={1.0}
             blend={1.5}
             speed={0.5}
@@ -912,6 +911,7 @@ function WelcomePage() {
               ${isScrolled ? 'bg-white/40 backdrop-blur-xl shadow-xl [backdrop-filter:blur(12px)] [-webkit-backdrop-filter:blur(12px)]' : 'bg-white/30 backdrop-blur-xl shadow-xl [backdrop-filter:blur(12px)] [-webkit-backdrop-filter:blur(12px)]'}
               flex items-center justify-between w-full max-w-4xl border border-white/20 h-11 relative`}
           >
+            {/* Logo on the Left */}
             <div className="flex items-center gap-1.5">
               <motion.div 
                 whileHover={{ scale: 1.1, rotate: 5 }}
@@ -922,8 +922,8 @@ function WelcomePage() {
               <span className="font-bold text-base bg-gradient-to-r from-indigo-700 to-purple-600 bg-clip-text text-transparent">EduVerse</span>
             </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center z-50 gap-0.5">
+            {/* Centered Navigation Items */}
+            <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2 gap-0.5 z-50">
               {navItems.map((item, index) => (
                 <motion.div
                   key={index}
@@ -939,6 +939,10 @@ function WelcomePage() {
                   </Link>
                 </motion.div>
               ))}
+            </div>
+
+            {/* Authentication Buttons on the Right */}
+            <div className="hidden md:flex items-center gap-0.5">
               {isLoggedIn ? (
                 <motion.div
                   whileHover={{ scale: 1.05, y: -2 }}
