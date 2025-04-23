@@ -1,4 +1,4 @@
-# 📚 EduVerse – AI-Powered EdTech Platform
+# 📚 EduVerse – Platform for Tutor and Students
 
 **EduVerse** is a modern, AI-integrated EdTech platform built using the MERN stack. It’s designed to transform online learning by focusing on **accessibility**, **interactivity**, and **inclusiveness**. Whether you're a tutor creating courses or a student navigating learning content, EduVerse ensures a smooth, engaging, and immersive experience.
 
