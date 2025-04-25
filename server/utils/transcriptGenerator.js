@@ -12,27 +12,43 @@ export const generateTranscript = async (videoUrl) => {
     // Initialize Gemini with API key (from .env)
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-    // Use the Gemini Flash 2.0 model
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    // Use the Gemini Flash 2.0 model (or another suitable model)
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     // Convert videoUrl to absolute path
     const filePath = path.resolve(__dirname, '..', videoUrl);
-    
+
     // Read the file as a buffer
     const fileBuffer = await fs.readFile(filePath);
-    
-    // Determine MIME type
-    const ext = path.extname(videoUrl).toLowerCase();
-    const mimeType = ext === '.mp4' ? 'video/mp4' : 'video/quicktime';
 
-    // Prepare the request
+    // Determine MIME type based on file extension
+    const ext = path.extname(videoUrl).toLowerCase();
+    let mimeType;
+    switch (ext) {
+      case '.mp4':
+        mimeType = 'video/mp4';
+        break;
+      case '.mov':
+        mimeType = 'video/quicktime';
+        break;
+      case '.avi':
+        mimeType = 'video/avi';
+        break;
+      case '.mkv':
+        mimeType = 'video/x-matroska';
+        break;
+      default:
+        throw new Error(`Unsupported video format: ${ext}`);
+    }
+
+    // Prepare the request for transcription
     const request = {
       contents: [
         {
           role: 'user',
           parts: [
             {
-              text: 'Transcribe this video with timecodes and speaker labels. Format as: [MM:SS] Speaker: Text',
+              text: 'Transcribe the spoken text from this video. Provide only the text of all words spoken, without timecodes or speaker labels.',
             },
             {
               fileData: {
@@ -43,15 +59,13 @@ export const generateTranscript = async (videoUrl) => {
           ],
         },
       ],
-      generationConfig: {
-        audioTimestamp: true,
-      },
     };
 
     // Generate transcription
     const result = await model.generateContent(request);
     const transcript = result.response.text();
 
+    // Return the transcript or a fallback message
     return transcript || 'No transcription generated';
   } catch (error) {
     console.error('Transcription error:', error);

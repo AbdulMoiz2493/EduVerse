@@ -14,6 +14,12 @@ const courseSchema = new mongoose.Schema({
   tutor: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   videos: [videoSchema],
   createdAt: { type: Date, default: Date.now },
+  payment: {
+    type: String,
+    enum: ["free", "paid"],
+    default: "free",
+  },
+  price: { type: Number, default: 0 },
 });
 
 export default mongoose.model("Course", courseSchema);

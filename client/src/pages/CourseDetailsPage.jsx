@@ -121,7 +121,7 @@ export const CourseDetailsPage = () => {
   useEffect(() => {
     if (!course) return;
 
-    const newSocket = io("https://web-dev-marathon-production.up.railway.app", { 
+    const newSocket = io("http://localhost:5000", { 
       withCredentials: true,
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -248,16 +248,14 @@ export const CourseDetailsPage = () => {
   // Handle logout
   const handleLogout = async () => {
     try {
-      await api.post("/logout");
+      await api.post("api/auth/logout");
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      setUser(null);
       navigate("/login");
     } catch (error) {
-      console.error("Logout failed:", error);
+      //console.error("Logout failed:", error);
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      setUser(null);
       navigate("/login");
     }
   };
@@ -288,7 +286,7 @@ export const CourseDetailsPage = () => {
       setNotifications(res.data);
       setUnreadCount(0);
     } catch (error) {
-      console.error("Error marking all notifications as read:", error);
+      console.error("Error Marking all notifications as read:", error);
       toast({
         title: "Error",
         description: "Failed to mark all notifications as read.",
@@ -717,7 +715,7 @@ export const CourseDetailsPage = () => {
                 >
                   <div className="aspect-w-16 aspect-h-9 bg-black video-player">
                     <video 
-                      src={`https://web-dev-marathon-production.up.railway.app/${selectedVideo.videoUrl}`}
+                      src={`http://localhost:5000/${selectedVideo.videoUrl}`}
                       controls
                       className="w-full h-full object-cover"
                     />
@@ -728,18 +726,18 @@ export const CourseDetailsPage = () => {
                     </h2>
                     <div className="border-t border-gray-200 pt-4 mt-4">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold">Transcript</h3>
+                        <h3 className="text-lg font-semibold">Transcribe</h3>
                         <Button
                           onClick={handleGenerateTranscript}
                           disabled={isGeneratingTranscript || selectedVideo.transcript}
                           className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white text-sm py-1 px-3 rounded-xl"
                         >
                           <FileText className="w-4 h-4 mr-1" />
-                          {isGeneratingTranscript ? "Generating..." : "Generate Transcript"}
+                          {isGeneratingTranscript ? "Generating..." : "Generate Transcribe"}
                         </Button>
                       </div>
                       <div className="max-h-60 overflow-y-auto text-gray-600 text-sm whitespace-pre-line bg-gray-50 p-4 rounded-lg">
-                        {selectedVideo.transcript || "No transcript available for this video. Click 'Generate Transcript' to create one."}
+                        {selectedVideo.transcript || "No transcribe available for this video. Click 'Generate Transcribe' to create one."}
                       </div>
                     </div>
                   </div>
@@ -779,7 +777,7 @@ export const CourseDetailsPage = () => {
                   <div className="w-8 h-8 rounded-full bg-gray-200 mr-2 flex items-center justify-center overflow-hidden">
                     {course.tutor?.profilePic ? (
                       <img
-                        src={`https://web-dev-marathon-production.up.railway.app/${course.tutor.profilePic}`}
+                        src={`http://localhost:5000/${course.tutor.profilePic}`}
                         alt={course.tutor.name || "Tutor"}
                         className="w-full h-full object-cover"
                       />
@@ -789,7 +787,7 @@ export const CourseDetailsPage = () => {
                       </span>
                     )}
                   </div>
-                  <span WclassName="text-sm text-gray-700 font-medium">
+                  <span className="text-sm text-gray-700 font-medium">
                     {course.tutor?.name || "Unknown Tutor"}
                   </span>
                 </div>
@@ -884,32 +882,34 @@ export const CourseDetailsPage = () => {
               <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-white/50" ref={chatContainerRef}>
                 {messages.length > 0 ? (
                   messages.map((msg) => (
-                    <motion.div 
+                    <motion.div
                       key={msg._id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3 }}
-                      className={`flex chat-message ${
-                        msg.user._id === user._id ? "justify-end" : "justify-start"
+                      className={`flex flex-col chat-message ${
+                        msg.user._id === user._id ? "items-end" : "items-start"
                       }`}
                     >
+                      {/* Username and Profile Picture */}
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
+                          {msg.user._id === user._id ? "U" : msg.user.name?.charAt(0) || "U"}
+                        </div>
+                        <div className="font-semibold text-xs text-gray-800">
+                          {msg.user._id === user._id ? "You" : msg.user.name || "Unknown"}
+                        </div>
+                      </div>
+                      {/* Message Content */}
                       <div
-                        className={`max-w-[70%] px-4 py-3 rounded-2xl shadow-sm ${
+                        className={`max-w-[70%] px-3 py-2 rounded-2xl shadow-sm ${
                           msg.user._id === user._id
                             ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
                             : "bg-white text-gray-800 border border-gray-200"
                         }`}
                       >
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
-                            {msg.user._id === user._id ? "You" : msg.user.name?.charAt(0) || "U"}
-                          </div>
-                          <div className="font-semibold text-sm">
-                            {msg.user._id === user._id ? "You" : msg.user.name || "Unknown"}
-                          </div>
-                        </div>
-                        <div className="text-sm">{msg.content}</div>
-                        <div className="text-xs opacity-60 mt-1">
+                        <div className="text-xs">{msg.content}</div>
+                        <div className="text-xs opacity-60 mt-0.5">
                           {new Date(msg.createdAt).toLocaleTimeString()}
                         </div>
                       </div>

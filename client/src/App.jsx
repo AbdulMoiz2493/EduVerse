@@ -17,6 +17,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import AboutPage from "./pages/AboutPage";
 import CoursesPage from "./pages/CoursesPage";
 import ContactPage from "./pages/ContactPage";
+import { PaymentPage } from "./pages/PaymentPage";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,11 @@ const App = () => {
           <Route path="/course/:id" element={
             <ProtectedRoute>
               <CourseDetailsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/payment/:id" element={
+            <ProtectedRoute>
+              <PaymentPage />
             </ProtectedRoute>
           } />
           

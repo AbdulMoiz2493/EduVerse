@@ -21,8 +21,7 @@ export const LoginPage = () => {
 
     try {
       const user = await login(email, password);
-      console.log(user)
-      // navigate(`/${user.role}`);
+      navigate(`/${user.role}`);
       toast({
         title: "Welcome back!",
         description: "Successfully logged into your account.",
@@ -40,37 +39,35 @@ export const LoginPage = () => {
     }
   };
 
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-100 via-purple-50 to-blue-100">
       {/* Header/Navigation */}
       <header className="py-4 px-4">
         <div className="container mx-auto">
           <div className="flex justify-between items-center">
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-              className="flex items-center gap-2"
-            >
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-500 w-10 h-10 rounded-xl flex items-center justify-center text-white">
-                <span className="font-bold text-xl">E</span>
-              </div>
-              <span className="font-bold text-xl bg-gradient-to-r from-indigo-700 to-purple-600 bg-clip-text text-transparent">EduVerse</span>
-            </motion.div>
-            
-            <motion.div 
+          <div className="flex items-center gap-1.5">
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                className="bg-gradient-to-r from-indigo-600 to-purple-500 w-7 h-7 rounded-full flex items-center justify-center text-white shadow-lg"
+              >
+                <span className="font-bold text-base">E</span>
+              </motion.div>
+              <span className="font-bold text-base bg-gradient-to-r from-indigo-700 to-purple-600 bg-clip-text text-transparent">EduVerse</span>
+            </div>
+
+            <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
             >
+              
               <Button
                 variant="ghost"
                 onClick={() => navigate("/")}
-                className="hover:bg-indigo-50 hover:text-indigo-700 flex items-center gap-2"
+                className="hover:bg-indigo-50 hover:text-indigo-600 font-medium text-gray-600 py-1 px-2.5 rounded-full transition-all text-xs"
               >
                 <ChevronLeft className="w-4 h-4" />
-                Back to Home
+                Back to home
               </Button>
             </motion.div>
           </div>
@@ -90,12 +87,14 @@ export const LoginPage = () => {
                 <LogIn className="w-10 h-10 text-indigo-600" />
               </div>
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Welcome Back
+            </h2>
             <p className="text-gray-600">
               Continue your learning journey with EduVerse
             </p>
           </div>
-          
+
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div className="relative">
@@ -136,13 +135,19 @@ export const LoginPage = () => {
                   type="checkbox"
                   className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                <label
+                  htmlFor="remember-me"
+                  className="ml-2 block text-sm text-gray-700"
+                >
                   Remember me
                 </label>
               </div>
 
               <div className="text-sm">
-                <Link to="/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500">
+                <Link
+                  to="/forgot-password"
+                  className="font-medium text-indigo-600 hover:text-indigo-500"
+                >
                   Forgot your password?
                 </Link>
               </div>
@@ -163,7 +168,9 @@ export const LoginPage = () => {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                <span className="px-2 bg-white text-gray-500">
+                  Or continue with
+                </span>
               </div>
             </div>
 
@@ -174,10 +181,10 @@ export const LoginPage = () => {
                 className="w-full py-6 border border-gray-300 hover:bg-gray-50 transition-colors"
                 disabled={loading}
               >
-                <img 
-                  src="https://developers.google.com/identity/images/g-logo.png" 
-                  alt="Google" 
-                  className="w-5 h-5 mr-2" 
+                <img
+                  src="https://developers.google.com/identity/images/g-logo.png"
+                  alt="Google"
+                  className="w-5 h-5 mr-2"
                 />
                 Continue with Google
               </Button>
@@ -187,7 +194,10 @@ export const LoginPage = () => {
           <div className="mt-8 text-center">
             <p className="text-gray-600">
               Don't have an account?{" "}
-              <Link to="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
+              <Link
+                to="/signup"
+                className="font-medium text-indigo-600 hover:text-indigo-500"
+              >
                 Sign up for free
               </Link>
             </p>

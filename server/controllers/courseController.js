@@ -3,15 +3,25 @@ import Course from "../models/Course.js";
 import { generateTranscript } from "../utils/transcriptGenerator.js";
 
 export const createCourse = async (req, res) => {
-  const { title, description } = req.body;
+  const { title, description, payment, price } = req.body;
   const thumbnail = req.file?.path;
 
   try {
+    if (!title || !description || !payment) {
+      return res.status(400).json({ message: "Title, description, and payment type are required" });
+    }
+
+    if (payment === "paid" && (!price || price <= 0)) {
+      return res.status(400).json({ message: "Price is required for paid courses" });
+    }
+
     const course = new Course({
       title,
       description,
       thumbnail,
       tutor: req.user.userId,
+      payment,
+      price: payment === "paid" ? parseFloat(price) : 0,
     });
     await course.save();
     res.status(201).json(course);
@@ -67,7 +77,7 @@ export const uploadVideo = async (req, res) => {
 
 export const updateCourse = async (req, res) => {
   const { courseId } = req.params;
-  const { title, description, removeThumbnail } = req.body;
+  const { title, description, removeThumbnail, payment, price } = req.body;
   const thumbnail = req.file?.path;
 
   try {
@@ -77,16 +87,19 @@ export const updateCourse = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    console.log("Raw request body:", req.body);
-    console.log("Uploaded file:", req.file);
-    console.log("Incoming update data:", { title, description, thumbnail, removeThumbnail });
+    if (!title || !description || !payment) {
+      return res.status(400).json({ message: "Title, description, and payment type are required" });
+    }
 
-    if (!title || !description) {
-      return res.status(400).json({ message: "Title and description are required" });
+    if (payment === "paid" && (!price || price <= 0)) {
+      return res.status(400).json({ message: "Price is required for paid courses" });
     }
 
     course.title = title;
     course.description = description;
+    course.payment = payment;
+    course.price = payment === "paid" ? parseFloat(price) : 0;
+
     if (removeThumbnail === "true") {
       course.thumbnail = undefined;
     } else if (thumbnail) {
@@ -101,8 +114,6 @@ export const updateCourse = async (req, res) => {
     }
 
     const updatedCourse = await Course.findById(courseId).populate("tutor", "name");
-    console.log("Course after update:", updatedCourse);
-
     res.json(updatedCourse);
   } catch (error) {
     console.error("Error updating course:", error);
@@ -178,20 +189,16 @@ export const getAllCourses = async (req, res) => {
 export const getCourse = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(`Fetching course with ID: ${id}`);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      console.log(`Invalid course ID: ${id}`);
       return res.status(400).json({ message: "Invalid course ID" });
     }
 
     const course = await Course.findById(id).populate("tutor", "name").lean();
     if (!course) {
-      console.log(`Course not found: ${id}`);
       return res.status(404).json({ message: "Course not found" });
     }
 
-    console.log(`Found course: ${course.title}`);
     res.status(200).json(course);
   } catch (error) {
     console.error("Error fetching course:", error.message);

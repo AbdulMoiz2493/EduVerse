@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom"; // Added useLocation
 import { useAuth } from "../../contexts/AuthContext";
-import { courseApi, enrollmentApi, api } from "../../utils/api";
+import { courseApi, enrollmentApi, paymentApi, api } from "../../utils/api";
 import { useToast } from "../../hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import SpotlightCard from "../SpotlightCard/SpotlightCard";
@@ -51,6 +51,246 @@ const Button = ({ children, className, ...props }) => {
   );
 };
 
+// PlaceholdersAndVanishInput Component (Adapted for React)
+const PlaceholdersAndVanishInput = ({ placeholders, onChange, onSubmit }) => {
+  const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
+  const intervalRef = useRef(null);
+  const canvasRef = useRef(null);
+  const inputRef = useRef(null);
+  const newDataRef = useRef([]);
+  const [value, setValue] = useState("");
+  const [animating, setAnimating] = useState(false);
+
+  const startAnimation = () => {
+    intervalRef.current = setInterval(() => {
+      setCurrentPlaceholder((prev) => (prev + 1) % placeholders.length);
+    }, 5000);
+  };
+
+  const handleVisibilityChange = () => {
+    if (document.visibilityState !== "visible" && intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    } else if (document.visibilityState === "visible") {
+      startAnimation();
+    }
+  };
+
+  useEffect(() => {
+    startAnimation();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [placeholders]);
+
+  const draw = useCallback(() => {
+    if (!inputRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    canvas.width = 800;
+    canvas.height = 800;
+    ctx.clearRect(0, 0, 800, 800);
+    const computedStyles = getComputedStyle(inputRef.current);
+
+    const fontSize = parseFloat(computedStyles.getPropertyValue("font-size"));
+    ctx.font = `${fontSize * 2}px ${computedStyles.fontFamily}`;
+    ctx.fillStyle = "#FFF";
+    ctx.fillText(value, 16, 40);
+
+    const imageData = ctx.getImageData(0, 0, 800, 800);
+    const pixelData = imageData.data;
+    const newData = [];
+
+    for (let t = 0; t < 800; t++) {
+      let i = 4 * t * 800;
+      for (let n = 0; n < 800; n++) {
+        let e = i + 4 * n;
+        if (
+          pixelData[e] !== 0 &&
+          pixelData[e + 1] !== 0 &&
+          pixelData[e + 2] !== 0
+        ) {
+          newData.push({
+            x: n,
+            y: t,
+            color: [
+              pixelData[e],
+              pixelData[e + 1],
+              pixelData[e + 2],
+              pixelData[e + 3],
+            ],
+          });
+        }
+      }
+    }
+
+    newDataRef.current = newData.map(({ x, y, color }) => ({
+      x,
+      y,
+      r: 1,
+      color: `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3]})`,
+    }));
+  }, [value]);
+
+  useEffect(() => {
+    draw();
+  }, [value, draw]);
+
+  const animate = (start) => {
+    const animateFrame = (pos = 0) => {
+      requestAnimationFrame(() => {
+        const newArr = [];
+        for (let i = 0; i < newDataRef.current.length; i++) {
+          const current = newDataRef.current[i];
+          if (current.x < pos) {
+            newArr.push(current);
+          } else {
+            if (current.r <= 0) {
+              current.r = 0;
+              continue;
+            }
+            current.x += Math.random() > 0.5 ? 1 : -1;
+            current.y += Math.random() > 0.5 ? 1 : -1;
+            current.r -= 0.05 * Math.random();
+            newArr.push(current);
+          }
+        }
+        newDataRef.current = newArr;
+        const ctx = canvasRef.current?.getContext("2d");
+        if (ctx) {
+          ctx.clearRect(pos, 0, 800, 800);
+          newDataRef.current.forEach((t) => {
+            const { x: n, y: i, r: s, color: color } = t;
+            if (n > pos) {
+              ctx.beginPath();
+              ctx.rect(n, i, s, s);
+              ctx.fillStyle = color;
+              ctx.strokeStyle = color;
+              ctx.stroke();
+            }
+          });
+        }
+        if (newDataRef.current.length > 0) {
+          animateFrame(pos - 8);
+        } else {
+          setValue("");
+          setAnimating(false);
+        }
+      });
+    };
+    animateFrame(start);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !animating) {
+      vanishAndSubmit();
+    }
+  };
+
+  const vanishAndSubmit = () => {
+    setAnimating(true);
+    draw();
+
+    const value = inputRef.current?.value || "";
+    if (value && inputRef.current) {
+      const maxX = newDataRef.current.reduce(
+        (prev, current) => (current.x > prev ? current.x : prev),
+        0
+      );
+      animate(maxX);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    vanishAndSubmit();
+    onSubmit && onSubmit(e);
+  };
+
+  return (
+    <form
+      className={`w-full relative max-w-md mx-auto bg-gray-50 h-12 rounded-full overflow-hidden shadow-[4px_4px_8px_rgba(0,0,0,0.1),-4px_-4px_8px_rgba(255,255,255,0.5)] transition duration-200 ${
+        value ? "bg-gray-100" : ""
+      }`}
+      onSubmit={handleSubmit}
+    >
+      <canvas
+        className={`absolute pointer-events-none text-base transform scale-50 top-[20%] left-2 sm:left-8 origin-top-left filter invert dark:invert-0 pr-20 ${
+          !animating ? "opacity-0" : "opacity-100"
+        }`}
+        ref={canvasRef}
+      />
+      <input
+        onChange={(e) => {
+          if (!animating) {
+            setValue(e.target.value);
+            onChange && onChange(e);
+          }
+        }}
+        onKeyDown={handleKeyDown}
+        ref={inputRef}
+        value={value}
+        type="text"
+        className={`w-full relative text-sm sm:text-base z-50 border border-gray-300 focus:border-purple-500 focus:border-2 bg-transparent text-gray-900 h-full rounded-full focus:outline-none focus:ring-0 pl-4 sm:pl-10 pr-20 ${
+          animating ? "text-transparent" : ""
+        }`}
+      />
+      <button
+        disabled={!value}
+        type="submit"
+        className="absolute right-2 top-1/2 z-50 -translate-y-1/2 h-8 w-8 rounded-full disabled:bg-gray-200 bg-indigo-600 transition duration-200 flex items-center justify-center"
+      >
+        <motion.svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="text-white h-4 w-4"
+        >
+          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+          <motion.path
+            d="M5 12l14 0"
+            initial={{ strokeDasharray: "50%", strokeDashoffset: "50%" }}
+            animate={{ strokeDashoffset: value ? 0 : "50%" }}
+            transition={{ duration: 0.3, ease: "linear" }}
+          />
+          <path d="M13 18l6 -6" />
+          <path d="M13 6l6 6" />
+        </motion.svg>
+      </button>
+      <div className="absolute inset-0 flex items-center rounded-full pointer-events-none">
+        <AnimatePresence mode="wait">
+          {!value && (
+            <motion.p
+              initial={{ y: 5, opacity: 0 }}
+              key={`current-placeholder-${currentPlaceholder}`}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -15, opacity: 0 }}
+              transition={{ duration: 0.3, ease: "linear" }}
+              className="text-gray-400 text-sm sm:text-base font-normal pl-4 sm:pl-10 text-left w-[calc(100%-2rem)] truncate"
+            >
+              {placeholders[currentPlaceholder]}
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </div>
+    </form>
+  );
+};
+
 export const StudentDashboard = () => {
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [availableCourses, setAvailableCourses] = useState([]);
@@ -68,60 +308,90 @@ export const StudentDashboard = () => {
   const { user, setUser } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const fetchData = async () => {
+    try {
+      // Fetch payments to check for completed payments
+      const paymentsRes = await paymentApi.getUserPayments();
+      const completedPayments = paymentsRes.data.filter(
+        (payment) => payment.status === "completed"
+      );
+
+      // Fetch enrollments
+      const enrollmentsRes = await enrollmentApi.getStudentEnrollments();
+      const enrolledCoursesData = enrollmentsRes.data
+        .filter((enrollment) => enrollment?.course != null)
+        .map((enrollment) => enrollment.course);
+      const enrolledCourseIds = enrolledCoursesData.map((course) => course._id);
+
+      // Handle enrollments for completed payments
+      for (const payment of completedPayments) {
+        if (!payment.course) {
+          //console.warn(`Payment ${payment._id} has no associated course. Skipping enrollment.`);
+          // toast({
+          //   title: "Enrollment Skipped",
+          //   description: "A completed payment has no associated course. Please contact support.",
+          //   variant: "destructive",
+          // });
+          continue; // Skip this payment
+        }
+      
+        if (!enrolledCourseIds.includes(payment.course._id)) {
+          try {
+            await enrollmentApi.enrollCourse(payment.course._id);
+            enrolledCoursesData.push(payment.course);
+            enrolledCourseIds.push(payment.course._id);
+            toast({
+              title: "Enrollment Confirmed!",
+              description: `You have been enrolled in ${payment.course.title}.`,
+            });
+          } catch (error) {
+            console.error(
+              `Failed to enroll in course ${payment.course._id}:`,
+              error
+            );
+            toast({
+              title: "Enrollment Failed",
+              description: `Could not enroll in ${payment.course.title}. Please contact support.`,
+              variant: "destructive",
+            });
+          }
+        }
+      }
+
+      setEnrolledCourses(enrolledCoursesData);
+
+      // Fetch all courses
+      const allCoursesRes = await courseApi.getAllCourses();
+      const availableCoursesData = allCoursesRes.data.filter(
+        (course) => course != null && !enrolledCourseIds.includes(course._id)
+      );
+      setAvailableCourses(availableCoursesData);
+
+      // Fetch notifications
+      const notificationsRes = await api.get("/api/notifications");
+      setNotifications(notificationsRes.data);
+
+      const unreadCountRes = await api.get("/api/notifications/unread-count");
+      setUnreadCount(unreadCountRes.data.count);
+
+      console.log("Enrolled Courses:", enrolledCoursesData);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load data. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch enrollments
-        const enrollmentsRes = await enrollmentApi.getStudentEnrollments();
-        const enrolledCoursesData = enrollmentsRes.data
-          .filter((enrollment) => enrollment?.course != null) // Null check
-          .map((enrollment) => enrollment.course);
-        setEnrolledCourses(enrolledCoursesData);
-
-        // Fetch learning stats (assuming a new endpoint exists)
-        const statsRes = await api.get("/api/student/learning-stats");
-        setLearningStats({
-          learningHours:
-            statsRes.data.learningHours || enrolledCoursesData.length * 12,
-          aiSessions:
-            statsRes.data.aiSessions || enrolledCoursesData.length * 4,
-        });
-
-        // Fetch available courses
-        const allCoursesRes = await courseApi.getAllCourses();
-        const enrolledCourseIds = enrolledCoursesData.map(
-          (course) => course._id
-        );
-        const availableCoursesData = allCoursesRes.data.filter(
-          (course) => course != null && !enrolledCourseIds.includes(course._id)
-        );
-        setAvailableCourses(availableCoursesData);
-
-        // Fetch notifications
-        const notificationsRes = await api.get("/api/notifications");
-        setNotifications(notificationsRes.data);
-
-        const unreadCountRes = await api.get("/api/notifications/unread-count");
-        setUnreadCount(unreadCountRes.data.count);
-
-        // Debugging logs
-        console.log("Enrolled Courses:", enrolledCoursesData);
-        console.log("Learning Stats:", statsRes.data);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load data. Please try again later.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
-  }, [toast]);
+  }, [toast, navigate]);
 
   const handleEnroll = async (courseId) => {
     try {
@@ -148,12 +418,12 @@ export const StudentDashboard = () => {
 
   const handleLogout = async () => {
     try {
-      await api.post("/logout");
+      await api.post("api/auth/logout");
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       navigate("/login");
     } catch (error) {
-      console.error("Logout failed:", error);
+      //console.error("Logout failed:", error);
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       navigate("/login");
@@ -231,6 +501,22 @@ export const StudentDashboard = () => {
       icon: <BookOpen className="w-4 h-4" />,
     },
   ];
+
+  const searchPlaceholders = [
+    "Search for ML courses",
+    "Find Web Dev tutorials",
+    "Explore DS programs",
+    "Discover AI courses",
+  ];
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    // No additional action needed as search is handled by state change
+  };
 
   if (loading) {
     return (
@@ -676,7 +962,7 @@ export const StudentDashboard = () => {
                         <div className="h-48 relative overflow-hidden">
                           {course.thumbnail ? (
                             <img
-                              src={`https://web-dev-marathon-production.up.railway.app/${course.thumbnail}`}
+                              src={`http://localhost:5000/${course.thumbnail}`}
                               alt={course.title}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             />
@@ -776,17 +1062,11 @@ export const StudentDashboard = () => {
               </h2>
             </div>
 
-            <div className="relative w-full md:w-auto">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder="Search courses..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500/20 w-full md:w-64 bg-white/80 backdrop-blur-sm"
+            <div className="w-full md:w-auto ">
+              <PlaceholdersAndVanishInput
+                placeholders={searchPlaceholders}
+                onChange={handleSearchChange}
+                onSubmit={handleSearchSubmit}
               />
             </div>
           </div>
@@ -804,7 +1084,7 @@ export const StudentDashboard = () => {
               >
                 {searchTerm ? (
                   <>
-                    <Search className="w-16 h-16 text-indigo-400 mx-auto mb-4" />
+                    <Search handshakeclassName="w-16 h-16 text-indigo-400 mx-auto mb-4" />
                     <p className="text-gray-600">
                       No courses found matching "{searchTerm}".
                     </p>
@@ -844,7 +1124,7 @@ export const StudentDashboard = () => {
                         <div className="h-48 relative overflow-hidden">
                           {course.thumbnail ? (
                             <img
-                              src={`https://web-dev-marathon-production.up.railway.app/${course.thumbnail}`}
+                              src={`http://localhost:5000/${course.thumbnail}`}
                               alt={course.title}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             />
@@ -906,7 +1186,7 @@ export const StudentDashboard = () => {
                                 <div className="w-8 h-8 rounded-full bg-gray-200 mr-2 flex items-center justify-center overflow-hidden">
                                   {course.tutor?.profilePic ? (
                                     <img
-                                      src={`https://web-dev-marathon-production.up.railway.app/${course.tutor.profilePic}`}
+                                      src={`http://localhost:5000/${course.tutor.profilePic}`}
                                       alt={course.tutor.name || "Tutor"}
                                       className="w-full h-full object-cover"
                                     />
@@ -921,7 +1201,9 @@ export const StudentDashboard = () => {
                                 </span>
                               </div>
                               <Button
-                                onClick={() => handleEnroll(course._id)}
+                                onClick={() =>
+                                  navigate(`/payment/${course._id}`)
+                                }
                                 className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl group"
                               >
                                 Enroll Now
@@ -959,8 +1241,6 @@ export const StudentDashboard = () => {
             </Button>
           </div>
         </motion.div>
-
-        
       </main>
 
       {/* Footer */}

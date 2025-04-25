@@ -128,8 +128,8 @@ export const notifyStudentsOnVideoUpload = async (courseId, videoTitle) => {
   }
 };
 
-// Helper function to notify user on new message
-export const notifyUserOnMessage = async (courseId, senderId, recipientId) => {
+// controllers/notificationController.js
+export const notifyUserOnMessage = async (courseId, senderId, recipientId, messageContent) => {
   try {
     const course = await Course.findById(courseId);
     if (!course) return;
@@ -137,10 +137,14 @@ export const notifyUserOnMessage = async (courseId, senderId, recipientId) => {
     const sender = await mongoose.model('User').findById(senderId);
     if (!sender) return;
 
+    const messagePreview = messageContent.length > 50 
+      ? `${messageContent.substring(0, 50)}...` 
+      : messageContent;
+
     await createNotification({
       userId: recipientId,
       type: 'new_message',
-      message: `New message from ${sender.name} in course: ${course.title}`,
+      message: `New message from ${sender.name} in course: ${course.title}: "${messagePreview}"`,
       courseId,
     });
   } catch (error) {

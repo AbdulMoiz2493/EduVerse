@@ -311,7 +311,7 @@ function ContactPage() {
             </div>
 
             {/* Mobile Menu Toggle */}
-            <div className="relative z-50 md:hidden mobile-menu-toggle -translate-y-1 transition !hover:transform-none">
+            <div className="relative z-50 md:hidden mobile-menu-toggle -translate-y-3 transition !hover:transform-none">
               <Button
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="relative z-50 bg-transparent text-gray-600 hover:text-indigo-600"

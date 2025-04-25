@@ -11,6 +11,7 @@ import http from 'http';
 import Message from './models/Message.js';
 import { upload } from './middleware/multer.js'; // Adjust path as needed
 import notificationRoutes from './routes/notificationRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js'; // Adjust path as needed
 
 dotenv.config();
 
@@ -19,9 +20,7 @@ const server = http.createServer(app);
 
 // Configure CORS for Express
 app.use(cors({
-  origin: ['http://localhost:8080',
-    'https://web-dev-marathon-production.up.railway.app',
-    'https://web-dev-marathon-three.vercel.app'], // Update to match the frontend's origin
+  origin: 'http://localhost:8080', // Update to match the frontend's origin
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -30,7 +29,7 @@ app.use(cors({
 // Configure Socket.IO with CORS
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:8080', "https://web-dev-marathon-production.up.railway.app/", "https://web-dev-marathon-three.vercel.app"], // Update to match the frontend's origin
+    origin: 'http://localhost:8080', // Update to match the frontend's origin
     credentials: true,
     methods: ['GET', 'POST'],
   },
@@ -44,6 +43,7 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/enrollment', enrollmentRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/payments', paymentRoutes); // Adjust path as needed
 
 // Socket.IO for real-time chat
 io.on('connection', (socket) => {

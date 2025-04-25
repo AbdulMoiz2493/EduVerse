@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Set the base URL for all API calls
-const BASE_URL = 'https://web-dev-marathon-production.up.railway.app';
+const BASE_URL = 'http://localhost:5000'; // Change this to your backend URL
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -43,7 +43,7 @@ api.interceptors.response.use(
 // Authentication API
 export const authApi = {
   logout: () => {
-    return api.post('/logout').then((response) => {
+    return api.post('api/auth/logout').then((response) => {
       // Clear local storage
       localStorage.removeItem('token');
       localStorage.removeItem('user');
@@ -63,6 +63,11 @@ export const courseApi = {
     const formData = new FormData();
     formData.append('title', data.title);
     formData.append('description', data.description);
+    formData.append('payment', data.payment);
+    formData.append('price', data.price);
+    if (data.payment === 'paid') {
+      formData.append('price', data.price);
+    }
     if (data.thumbnail) {
       formData.append('thumbnail', data.thumbnail);
     }
@@ -77,6 +82,9 @@ export const courseApi = {
     if (data.title) formData.append('title', data.title);
     if (data.description) formData.append('description', data.description);
     if (data.thumbnail) formData.append('thumbnail', data.thumbnail);
+    if (data.payment) formData.append('payment', data.payment);
+    if (data.price) formData.append('price', data.price);
+    if (data.removeThumbnail) formData.append('removeThumbnail', data.removeThumbnail);
     
     return api.put(`/api/courses/${courseId}`, formData, {
       headers: {
@@ -121,4 +129,12 @@ export const enrollmentApi = {
 // Chat API
 export const chatApi = {
   getMessages: (courseId) => api.get(`/api/chat/${courseId}`),
+};
+
+// Payment API
+export const paymentApi = {
+  createPaymentLink: (courseId) => api.post('/api/payments/create', { courseId }), // Fixed endpoint
+  getUserPayments: () => api.get('/api/payments/user'), // Fixed endpoint
+  getPaymentById: (paymentId) => api.get(`/api/payments/${paymentId}`), // Fixed endpoint
+  verifyEnrollment: (data) => api.post('/api/payments/verify-enrollment', data),
 };
