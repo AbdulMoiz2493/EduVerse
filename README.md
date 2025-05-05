@@ -89,7 +89,7 @@ Create a `.env` file in the root with the following:
 ```
 MONGO_URI=your_mongo_uri
 PORT=5000
-STRIPE_SECRET=your_stripe_secret
+STRIPE_SECRET_KEY=your_stripe_secret
 JWT_SECRET=your_jwt_secret
 OPENAI_API_KEY=your_whisper_key
 ```
