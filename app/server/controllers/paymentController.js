@@ -9,15 +9,15 @@ import dotenv from "dotenv";
 dotenv.config();
 
 
-console.log("STRIPE_SECRET_KEY:", process.env.STRIPE_SECRET_KEY); // Debug the env variable
+//console.log("STRIPE_SECRET_KEY:", process.env.STRIPE_SECRET_KEY); // Debug the env variable
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2024-04-10", // Specify the API version explicitly
 });
 
-console.log("Stripe instance:", stripe); // Debug the stripe instance
-console.log("Stripe products:", stripe.products); // Debug the products property
+//console.log("Stripe instance:", stripe); // Debug the stripe instance
+//console.log("Stripe products:", stripe.products); // Debug the products property
 
 // Create a payment link for a course
 export const createPaymentLink = async (req, res) => {
