@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eduverse
+  namespace: eduverse-ns
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: eduverse
+  template:
+    metadata:
+      labels:
+        app: eduverse
+    spec:
+      # Required for host.docker.internal resolution
+      dnsPolicy: ClusterFirstWithHostNet
+      dnsConfig:
+        searches:
+          - docker.internal
+        options:
+          - name: ndots
+            value: "2"
+      containers:
+      - name: eduverse
+        image: abdulmoiz2493/eduverse:latest
+        ports:
+        - containerPort: 5000
+        - containerPort: 5173
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "5000"
+        - name: STRIPE_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: eduverse-secrets
+              key: stripe-secret-key
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: eduverse-secrets
+              key: mongo-uri
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: eduverse-secrets
+              key: jwt-secret
