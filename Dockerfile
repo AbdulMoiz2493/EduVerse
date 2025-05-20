@@ -14,9 +14,6 @@ RUN cd server && npm install
 # Install dependencies for frontend
 RUN cd client && npm install
 
-# Copy the .env file for backend
-COPY app/server/.env ./server/
-
 # Copy the rest of the application code
 COPY app/server ./server/
 COPY app/client ./client/
